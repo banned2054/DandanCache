@@ -13,7 +13,7 @@ public class EpisodeVeryCold
     [Column("subjectId")]
     public long SubjectId { get; set; }
 
-    [Column("episodeNum")]
+    [Column("episode")]
     public float EpisodeNum { get; set; }
 
     [Column("addInDate")]
