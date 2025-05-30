@@ -1,4 +1,4 @@
-﻿using RestSharp;
+using RestSharp;
 using System.Net;
 
 namespace GetBangumiInfo.Utils;

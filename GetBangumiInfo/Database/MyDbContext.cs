@@ -1,4 +1,4 @@
-﻿using GetBangumiInfo.Models.Database;
+using GetBangumiInfo.Models.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace GetBangumiInfo.Database;
