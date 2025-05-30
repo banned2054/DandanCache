@@ -45,9 +45,7 @@ internal class BangumiUtils
     public static async Task DownloadDumpFile()
     {
         var latestJson =
-            await NetUtils.FetchAsync("https://raw.githubusercontent.com/bangumi/Archive/master/aux/latest.json",
-                                      null,
-                                      "http:127.0.0.1:7890");
+            await NetUtils.FetchAsync("https://raw.githubusercontent.com/bangumi/Archive/master/aux/latest.json");
         var dict    = JObject.Parse(latestJson);
         var dumpUrl = dict["browser_download_url"]?.ToString() ?? "";
         if (string.IsNullOrEmpty(dumpUrl))
@@ -60,7 +58,7 @@ internal class BangumiUtils
             return;
         }
 
-        await NetUtils.DownloadAsync(dumpUrl, "dump.zip", "http:127.0.0.1:7890");
+        await NetUtils.DownloadAsync(dumpUrl, "dump.zip");
     }
 
     public static Task UnzipDumpFile()
