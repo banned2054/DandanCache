@@ -8,12 +8,17 @@ public class MyDbContext : DbContext
     /// <summary>
     /// 热表，每小时更新
     /// </summary>
-    public DbSet<Episode> EpisodeList { get; set; }
+    public DbSet<Episode> EpisodeList { get; set; } = null!;
 
     /// <summary>
     /// 半冷，每天更新
     /// </summary>
-    public DbSet<EpisodeCold> EpisodeListCold { get; set; }
+    public DbSet<EpisodeCold> EpisodeListCold { get; set; } = null!;
+
+    /// <summary>
+    /// 半冷，每天更新
+    /// </summary>
+    public DbSet<EpisodeVeryCold> EpisodeListVeryCold { get; set; } = null!;
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
