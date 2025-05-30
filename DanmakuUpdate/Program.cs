@@ -4,8 +4,9 @@ namespace HotDanmakuUpdate;
 
 internal class Program
 {
-    private static async Task Main()
+    private static async Task Main(string[] args)
     {
+        if (args.Length == 0) return;
         var db = new MyDbContext();
 
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
@@ -16,9 +17,19 @@ internal class Program
         }
 
         var client = new DandanApiClient(dandanAppId, dandanAppSecret);
-        foreach (var episode in db.EpisodeList)
+        if (args[0] == "hot")
         {
-            var danmaku = await client.GetDanmakuAsync(episode.Id);
+            foreach (var episode in db.EpisodeList)
+            {
+                var danmaku = await client.GetDanmakuAsync(episode.Id);
+            }
+        }
+        else
+        {
+            foreach (var episode in db.EpisodeListCold)
+            {
+                var danmaku = await client.GetDanmakuAsync(episode.Id);
+            }
         }
     }
 }
