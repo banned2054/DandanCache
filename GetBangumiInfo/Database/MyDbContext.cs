@@ -17,7 +17,7 @@ public class MyDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var connectSetting = Environment.GetEnvironmentVariable("ConnectSetting ");
+        var connectSetting = Environment.GetEnvironmentVariable("DatabaseConnectSetting");
         optionsBuilder.UseNpgsql(connectSetting);
     }
 }
