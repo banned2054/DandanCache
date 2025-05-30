@@ -8,10 +8,10 @@ public class Episode
 {
     [Key]
     [Column("id")]
-    public long Id { get; set; }
+    public int Id { get; set; }
 
     [Column("subjectId")]
-    public long SubjectId { get; set; }
+    public int SubjectId { get; set; }
 
     [Column("episode")]
     public float? EpisodeNum { get; set; }
