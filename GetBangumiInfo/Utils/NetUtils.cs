@@ -3,7 +3,7 @@ using System.Net;
 
 namespace GetBangumiInfo.Utils;
 
-internal class NetUtils
+public class NetUtils
 {
     // Fetch文本内容
     public static async Task<string> FetchAsync(string                      url,

@@ -2,7 +2,7 @@ using TimeZoneConverter;
 
 namespace GetBangumiInfo.Utils;
 
-internal class DateUtils
+public class DateUtils
 {
     public static DateTime GetBeijingNow()
     {

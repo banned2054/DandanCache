@@ -5,7 +5,7 @@ using System.Text.Json;
 
 namespace GetBangumiInfo.Utils;
 
-internal class BangumiUtils
+public class BangumiUtils
 {
     public static async Task<(List<int>, List<int>)> GetCalendar()
     {

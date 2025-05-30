@@ -4,7 +4,7 @@ using System.Text.Json;
 
 namespace GetBangumiInfo.Utils;
 
-internal class FileUtils
+public class FileUtils
 {
     public static void UnzipFile(string zipPath, string extractPath)
     {

@@ -2,7 +2,7 @@ using System.Text.Json;
 
 namespace GetBangumiInfo.Utils;
 
-internal class StringUtils
+public class StringUtils
 {
     public static bool QuickFilter(string line, int subjectId)
     {
