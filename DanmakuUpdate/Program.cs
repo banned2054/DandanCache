@@ -1,6 +1,6 @@
 using GetBangumiInfo.Database;
 
-namespace HotDanmakuUpdate;
+namespace DanmakuUpdate;
 
 internal class Program
 {

@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace HotDanmakuUpdate.Utils;
+namespace DanmakuUpdate.Utils;
 
 internal class DandanUtils
 {

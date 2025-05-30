@@ -1,7 +1,7 @@
-using HotDanmakuUpdate.Utils;
+using DanmakuUpdate.Utils;
 using RestSharp;
 
-namespace HotDanmakuUpdate;
+namespace DanmakuUpdate;
 
 internal class DandanApiClient
 {
