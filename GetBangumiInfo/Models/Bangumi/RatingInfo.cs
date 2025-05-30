@@ -11,5 +11,5 @@ public class RatingInfo
     public float Score { get; set; }
 
     [JsonProperty("count")]
-    public Dictionary<string, int> Count { get; set; }
+    public Dictionary<string, int>? Count { get; set; }
 }

@@ -1,7 +1,7 @@
+using GetBangumiInfo.Models.Bangumi;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
-using GetBangumiInfo.Models.Bangumi;
 
 namespace GetBangumiInfo.Utils;
 
@@ -23,7 +23,7 @@ internal class BangumiUtils
         var days             = JsonConvert.DeserializeObject<List<BangumiDay>>(response);
         foreach (var day in days!)
         {
-            if (day.Weekday.Id == todayWeekday || day.Weekday.Id == yesterdayWeekday)
+            if (day.Weekday!.Id == todayWeekday || day.Weekday.Id == yesterdayWeekday)
             {
                 hotIdList.AddRange(from item in day.Items
                                    where item.Rating != null

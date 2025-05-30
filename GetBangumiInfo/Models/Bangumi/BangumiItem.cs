@@ -35,7 +35,7 @@ public class BangumiItem
     public int EpsCount { get; set; }
 
     [JsonProperty("images")]
-    public ImageLinks Images { get; set; }
+    public ImageLinks? Images { get; set; }
 
     [JsonProperty("rating")]
     public RatingInfo? Rating { get; set; }
@@ -44,5 +44,5 @@ public class BangumiItem
     public int Rank { get; set; }
 
     [JsonProperty("collection")]
-    public CollectionInfo Collection { get; set; }
+    public CollectionInfo? Collection { get; set; }
 }
