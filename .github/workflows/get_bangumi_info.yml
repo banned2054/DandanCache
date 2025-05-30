@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
+      DatabaseHost: ${{ secrets.DATABASE_HOST }}
     steps:
       - uses: actions/checkout@v3
 
