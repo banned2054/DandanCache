@@ -9,6 +9,9 @@ internal class Program
 {
     private static async Task Main()
     {
+        await BangumiUtils.DownloadDumpFile();
+        await BangumiUtils.UnzipDumpFile();
+
         var (hotList, coldList) = await BangumiUtils.GetCalendar();
         await using var db          = new MyDbContext();
         await using var transaction = await db.Database.BeginTransactionAsync();

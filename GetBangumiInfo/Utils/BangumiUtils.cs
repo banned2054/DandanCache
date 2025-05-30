@@ -61,7 +61,12 @@ internal class BangumiUtils
         }
 
         await NetUtils.DownloadAsync(dumpUrl, "dump.zip", "http:127.0.0.1:7890");
+    }
+
+    public static Task UnzipDumpFile()
+    {
         FileUtils.UnzipFile("dump.zip", AppContext.BaseDirectory);
+        return Task.CompletedTask;
     }
 
     public static JsonElement? GetSubjectInfo(int subjectId)
