@@ -22,7 +22,7 @@ public class NetUtils
         }
 
         var client  = new RestClient(options);
-        var request = new RestRequest(url);
+        var request = new RestRequest(url.Trim());
 
         if (headers != null)
         {
