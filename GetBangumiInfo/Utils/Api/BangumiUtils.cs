@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text.Json;
 
-namespace GetBangumiInfo.Utils;
+namespace GetBangumiInfo.Utils.Api;
 
 public class BangumiUtils
 {

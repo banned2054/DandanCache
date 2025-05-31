@@ -1,6 +1,6 @@
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Database;
-using GetBangumiInfo.Utils;
+using GetBangumiInfo.Utils.Api;
 using Microsoft.EntityFrameworkCore;
 
 namespace GetBangumiInfo.Controllers;
