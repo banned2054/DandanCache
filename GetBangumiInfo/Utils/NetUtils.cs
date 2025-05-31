@@ -8,16 +8,16 @@ public class NetUtils
 {
     // Fetch文本内容
     public static async Task<string> FetchAsync(string                      url,
-                                                Dictionary<string, string>? headers = null)
+                                                Dictionary<string, string>? headers     = null,
+                                                bool                        enableProxy = false)
     {
         var options = new RestClientOptions
         {
             RemoteCertificateValidationCallback = (_, _, _, _) => true
         };
 
-        var enableProxy = Environment.GetEnvironmentVariable("ENABLE_HTTP_PROXY")?.ToLower() == "true";
-        var proxy       = Environment.GetEnvironmentVariable("HTTP_PROXY");
-        if (!string.IsNullOrWhiteSpace(proxy) && IsProxyAvailable(proxy) && enableProxy)
+        var proxy = Environment.GetEnvironmentVariable("HTTP_PROXY");
+        if (enableProxy && !string.IsNullOrWhiteSpace(proxy) && IsProxyAvailable(proxy))
         {
             var proxyUri = new Uri(proxy);
             options.Proxy = new WebProxy(proxyUri.Host, proxyUri.Port);
@@ -44,16 +44,18 @@ public class NetUtils
         return response.Content ?? string.Empty;
     }
 
-    public static async Task DownloadAsync(string url, string savePath)
+    public static async Task DownloadAsync(string url,
+                                           string savePath,
+                                           bool   enableProxy = false)
     {
         var options = new RestClientOptions
         {
             RemoteCertificateValidationCallback = (_, _, _, _) => true
         };
 
-        var enableProxy = Environment.GetEnvironmentVariable("ENABLE_HTTP_PROXY")?.ToLower() == "true";
-        var proxy       = Environment.GetEnvironmentVariable("HTTP_PROXY");
-        if (!string.IsNullOrWhiteSpace(proxy) && IsProxyAvailable(proxy) && enableProxy)
+
+        var proxy = Environment.GetEnvironmentVariable("HTTP_PROXY");
+        if (enableProxy && !string.IsNullOrWhiteSpace(proxy) && IsProxyAvailable(proxy))
         {
             var proxyUri = new Uri(proxy);
             options.Proxy = new WebProxy(proxyUri.Host, proxyUri.Port);
