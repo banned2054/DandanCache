@@ -9,86 +9,120 @@ internal class Program
 {
     private static async Task Main()
     {
+        await UpdateBangumi();
+    }
+
+    public static async Task UpdateBangumi()
+    {
+        // ① 准备离线数据
         await BangumiUtils.DownloadDumpFile();
         await BangumiUtils.UnzipDumpFile();
 
-        var (hotList, coldList) = await BangumiUtils.GetCalendar();
-        await using var db          = new MyDbContext();
-        await using var transaction = await db.Database.BeginTransactionAsync();
+        // ② 取本周番剧 SubjectId 列表
+        var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
 
-        // Step 1: 读取旧数据
+        await using var db = new MyDbContext();
+        await using var tx = await db.Database.BeginTransactionAsync();
+
+        // ---------- 1. 读取旧表 ----------
         var oldHotList  = await db.EpisodeList.AsNoTracking().ToListAsync();
         var oldColdList = await db.EpisodeListCold.AsNoTracking().ToListAsync();
 
         var oldHotIds  = oldHotList.Select(e => e.Id).ToHashSet();
         var oldColdIds = oldColdList.Select(e => e.Id).ToHashSet();
 
-        // Step 2: 清空热表与冷表
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeList\";");
-        await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeListCold\";");
-
-        // Step 3: 构造新热表数据
-        var hotEpisodes = hotList
+        // ---------- 2. 生成新热表 ----------
+        var hotEpisodes = hotSubjectIds
                          .SelectMany(BangumiUtils.GetSubjectEpisodeList)
-                         .Select(item => new Episode
+                         .Select(j => new Episode
                           {
-                              Id         = item.GetProperty("id").GetInt32(),
-                              EpisodeNum = item.GetProperty("sort").GetSingle(),
-                              SubjectId  = item.GetProperty("subject_id").GetInt32()
+                              Id         = j.GetProperty("id").GetInt32(),
+                              SubjectId  = j.GetProperty("subject_id").GetInt32(),
+                              EpisodeNum = j.TryGetProperty("sort", out var s) ? s.GetSingle() : null
                           })
                          .ToList();
 
-        db.EpisodeList.AddRange(hotEpisodes);
-        var hotIds = hotEpisodes.Select(e => e.Id).ToHashSet();
+        var newHotIds = hotEpisodes.Select(e => e.Id).ToHashSet();
 
-        // Step 4: 构造新冷表数据，排除热数据
-        var coldEpisodes = coldList
+        // ---------- 3. 生成新冷表（排除热表里的） ----------
+        var coldEpisodes = coldSubjectIds
                           .SelectMany(BangumiUtils.GetSubjectEpisodeList)
-                          .Select(item => new EpisodeCold
+                          .Select(j => new EpisodeCold
                            {
-                               Id         = item.GetProperty("id").GetInt32(),
-                               EpisodeNum = item.GetProperty("sort").GetSingle(),
-                               SubjectId  = item.GetProperty("subject_id").GetInt32()
+                               Id         = j.GetProperty("id").GetInt32(),
+                               SubjectId  = j.GetProperty("subject_id").GetInt32(),
+                               EpisodeNum = j.TryGetProperty("sort", out var s) ? s.GetSingle() : null
                            })
-                          .Where(e => !hotIds.Contains(e.Id))
+                          .Where(e => !newHotIds.Contains(e.Id))
                           .ToList();
 
-        db.EpisodeListCold.AddRange(coldEpisodes);
-        var coldIds = coldEpisodes.Select(e => e.Id).ToHashSet();
+        var newColdIds = coldEpisodes.Select(e => e.Id).ToHashSet();
 
-        // Step 5: 从旧热/冷表中筛选未出现在新数据中的，标记为VeryCold
-        var newHotColdIds = hotIds.Union(coldIds);
+        // ---------- 4. 差集运算 ----------
+        var hotToInsert     = hotEpisodes.Where(e => !oldHotIds.Contains(e.Id)).ToList();
+        var coldToInsert    = coldEpisodes.Where(e => !oldColdIds.Contains(e.Id)).ToList();
+        var hotToDeleteIds  = oldHotIds.Except(newHotIds).ToList();
+        var coldToDeleteIds = oldColdIds.Except(newColdIds).ToList();
 
-        var veryColdCandidates = oldHotList
-                                .Where(e => !newHotColdIds.Contains(e.Id))
-                                .Select(e => new EpisodeVeryCold
-                                 {
-                                     Id         = e.Id,
-                                     SubjectId  = e.SubjectId,
-                                     EpisodeNum = e.EpisodeNum ?? 0,
-                                     AddInDate  = DateTime.UtcNow
-                                 })
-                                .Concat(
-                                        oldColdList
-                                           .Where(e => !newHotColdIds.Contains(e.Id))
-                                           .Select(e => new EpisodeVeryCold
-                                            {
-                                                Id         = e.Id,
-                                                SubjectId  = e.SubjectId,
-                                                EpisodeNum = e.EpisodeNum ?? 0,
-                                                AddInDate  = DateTime.UtcNow
-                                            })
-                                       )
-                                .ToList();
+        // ---------- 5. 删掉过时行 ----------
+        if (hotToDeleteIds.Count > 0)
+            await db.EpisodeList
+                    .Where(e => hotToDeleteIds.Contains(e.Id))
+                    .ExecuteDeleteAsync();
 
-        db.EpisodeListVeryCold.AddRange(veryColdCandidates);
+        if (coldToDeleteIds.Count > 0)
+            await db.EpisodeListCold
+                    .Where(e => coldToDeleteIds.Contains(e.Id))
+                    .ExecuteDeleteAsync();
 
-        // Step 6: 清除VeryCold中已“回温”的数据
-        var allNewIds            = newHotColdIds.Select(id => (long)id).ToList();
-        var toDeleteFromVeryCold = db.EpisodeListVeryCold.Where(e => allNewIds.Contains(e.Id));
-        db.EpisodeListVeryCold.RemoveRange(toDeleteFromVeryCold);
+        // ---------- 6. 插入新增行 ----------
+        if (hotToInsert.Count  > 0) await db.EpisodeList.AddRangeAsync(hotToInsert);
+        if (coldToInsert.Count > 0) await db.EpisodeListCold.AddRangeAsync(coldToInsert);
 
+        // ---------- 7. VeryCold：新增 ----------
+        var idsMovedToVeryCold = hotToDeleteIds.Concat(coldToDeleteIds).ToHashSet();
+        if (idsMovedToVeryCold.Count > 0)
+        {
+            var existedVcIds = await db.EpisodeListVeryCold
+                                       .Where(vc => idsMovedToVeryCold.Contains(vc.Id))
+                                       .Select(vc => vc.Id)
+                                       .ToHashSetAsync();
+
+            var veryColdCandidates =
+                oldHotList.Where(e => idsMovedToVeryCold.Contains(e.Id))
+                          .Select(e => new EpisodeVeryCold
+                           {
+                               Id         = e.Id,
+                               SubjectId  = e.SubjectId,
+                               EpisodeNum = e.EpisodeNum ?? 0,
+                               AddInDate  = DateTime.UtcNow
+                           })
+                          .Concat(
+                                  oldColdList.Where(e => idsMovedToVeryCold.Contains(e.Id))
+                                             .Select(e => new EpisodeVeryCold
+                                              {
+                                                  Id         = e.Id,
+                                                  SubjectId  = e.SubjectId,
+                                                  EpisodeNum = e.EpisodeNum ?? 0,
+                                                  AddInDate  = DateTime.UtcNow
+                                              }))
+                          .Where(vc => !existedVcIds.Contains(vc.Id))
+                          .ToList();
+
+            if (veryColdCandidates.Count > 0)
+                await db.EpisodeListVeryCold.AddRangeAsync(veryColdCandidates);
+        }
+
+        // ---------- 8. VeryCold：清除“回温”的 ----------
+        var currentActiveIds = newHotIds.Union(newColdIds)
+                                        .ToHashSet();
+
+        await db.EpisodeListVeryCold
+                .Where(vc => currentActiveIds.Contains(vc.Id))
+                .ExecuteDeleteAsync();
+
+        // ---------- 9. 提交 ----------
         await db.SaveChangesAsync();
-        await transaction.CommitAsync();
+        await tx.CommitAsync();
     }
 }
