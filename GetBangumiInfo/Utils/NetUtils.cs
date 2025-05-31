@@ -1,5 +1,6 @@
 using RestSharp;
 using System.Net;
+using System.Net.Sockets;
 
 namespace GetBangumiInfo.Utils;
 
@@ -7,15 +8,16 @@ public class NetUtils
 {
     // Fetch文本内容
     public static async Task<string> FetchAsync(string                      url,
-                                                Dictionary<string, string>? headers = null,
-                                                string?                     proxy   = null)
+                                                Dictionary<string, string>? headers = null)
     {
         var options = new RestClientOptions
         {
             RemoteCertificateValidationCallback = (_, _, _, _) => true
         };
 
-        if (!string.IsNullOrWhiteSpace(proxy))
+        var enableProxy = Environment.GetEnvironmentVariable("ENABLE_HTTP_PROXY")?.ToLower() == "true";
+        var proxy       = Environment.GetEnvironmentVariable("HTTP_PROXY");
+        if (!string.IsNullOrWhiteSpace(proxy) && IsProxyAvailable(proxy) && enableProxy)
         {
             var proxyUri = new Uri(proxy);
             options.Proxy = new WebProxy(proxyUri.Host, proxyUri.Port);
@@ -42,14 +44,16 @@ public class NetUtils
         return response.Content ?? string.Empty;
     }
 
-    public static async Task DownloadAsync(string url, string savePath, string? proxy = null)
+    public static async Task DownloadAsync(string url, string savePath)
     {
         var options = new RestClientOptions
         {
             RemoteCertificateValidationCallback = (_, _, _, _) => true
         };
 
-        if (!string.IsNullOrWhiteSpace(proxy))
+        var enableProxy = Environment.GetEnvironmentVariable("ENABLE_HTTP_PROXY")?.ToLower() == "true";
+        var proxy       = Environment.GetEnvironmentVariable("HTTP_PROXY");
+        if (!string.IsNullOrWhiteSpace(proxy) && IsProxyAvailable(proxy) && enableProxy)
         {
             var proxyUri = new Uri(proxy);
             options.Proxy = new WebProxy(proxyUri.Host, proxyUri.Port);
@@ -81,5 +85,20 @@ public class NetUtils
     {
         return Uri.TryCreate(url, UriKind.Absolute, out var uriResult)
             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+    }
+
+    private static bool IsProxyAvailable(string proxy)
+    {
+        try
+        {
+            var       uri    = new Uri(proxy);
+            using var client = new TcpClient();
+            var       task   = client.ConnectAsync(uri.Host, uri.Port);
+            return task.Wait(1000) && client.Connected;
+        }
+        catch
+        {
+            return false;
+        }
     }
 }
