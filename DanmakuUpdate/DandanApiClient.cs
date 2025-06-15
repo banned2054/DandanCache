@@ -46,7 +46,7 @@ public class DandanApiClient
         try
         {
             var json = await NetUtils.FetchAsync(url, _headers);
-            var list = JsonConvert.DeserializeObject<AnimeList>(json);
+            var list = JsonConvert.DeserializeObject<SearchAnimeBySeason>(json);
             return list!.ShortInfoList;
         }
         catch (HttpRequestException ex)
@@ -63,7 +63,7 @@ public class DandanApiClient
         try
         {
             var json = await NetUtils.FetchAsync(url, _headers);
-            var list = JsonConvert.DeserializeObject<AnimeList>(json);
+            var list = JsonConvert.DeserializeObject<SearchAnimeBySeason>(json);
             return list!.ShortInfoList;
         }
         catch (HttpRequestException ex)
@@ -82,6 +82,29 @@ public class DandanApiClient
             var json     = await NetUtils.FetchAsync(url, _headers);
             var response = JsonConvert.DeserializeObject<ResponseAnimeInfo>(json);
             return response!.AnimeInfo;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
+        }
+
+        return null;
+    }
+
+    public async Task<List<ShortAnimeInfo>?> SearchAnimeByName(string keyword, string? type = null)
+    {
+        if (string.IsNullOrEmpty(keyword) || keyword.Length < 2) return null;
+        var url = $"https://api.dandanplay.net/api/v2/search/anime?keyword={keyword}";
+        if (!string.IsNullOrEmpty(type))
+        {
+            url = $"{url}&type={type}";
+        }
+
+        try
+        {
+            var json = await NetUtils.FetchAsync(url, _headers);
+            var list = JsonConvert.DeserializeObject<SearchAnimeByName>(json);
+            return list!.ShortInfoList;
         }
         catch (HttpRequestException ex)
         {
