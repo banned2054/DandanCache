@@ -20,6 +20,11 @@ public class MyDbContext : DbContext
     /// </summary>
     public DbSet<EpisodeVeryCold> EpisodeListVeryCold { get; set; } = null!;
 
+    /// <summary>
+    /// bangumi、bilibili、弹弹play的id映射
+    /// </summary>
+    public DbSet<Mapping> MappingList { get; set; } = null!;
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         var connectSetting = Environment.GetEnvironmentVariable("DatabaseConnectSetting");
