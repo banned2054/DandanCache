@@ -1,5 +1,5 @@
 using DanmakuUpdate.Models.Dandan;
-using GetBangumiInfo.Models.Bangumi;
+using DanmakuUpdate.Models.Net;
 using GetBangumiInfo.Utils;
 using Newtonsoft.Json;
 
@@ -37,7 +37,7 @@ public class DandanApiClient
 
     public async Task<List<ShortAnimeInfo>?> SearchAnimeBySeason(int year, int month)
     {
-        if (year < 1917 || month < 1 || month > 12)
+        if (year < 1980 || month < 1 || month > 12)
         {
             return null;
         }
@@ -53,6 +53,7 @@ public class DandanApiClient
         {
             Console.WriteLine($"Request failed: {ex.Message}");
         }
+
         return null;
     }
 
@@ -69,6 +70,24 @@ public class DandanApiClient
         {
             Console.WriteLine($"Request failed: {ex.Message}");
         }
+
+        return null;
+    }
+
+    public async Task<FullAnimeInfo?> GetFullAnimeInfo(int id)
+    {
+        var url = $"https://api.dandanplay.net/api/v2/bangumi/{id}";
+        try
+        {
+            var json     = await NetUtils.FetchAsync(url, _headers);
+            var response = JsonConvert.DeserializeObject<ResponseAnimeInfo>(json);
+            return response!.AnimeInfo;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
+        }
+
         return null;
     }
 }

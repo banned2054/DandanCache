@@ -1,8 +1,9 @@
+using DanmakuUpdate.Models.Dandan;
 using Newtonsoft.Json;
 
-namespace DanmakuUpdate.Models.Dandan;
+namespace DanmakuUpdate.Models.Net;
 
-public class AnimeList
+public class ResponseAnimeInfo
 {
     [JsonProperty("errorCode")]
     public int ErrorCode { get; set; }
@@ -13,9 +14,6 @@ public class AnimeList
     [JsonProperty("success")]
     public bool IsSuccess { get; set; }
 
-    [JsonProperty("hasMore")]
-    public bool IsNotEnd { get; set; }
-
-    [JsonProperty("bangumiList")]
-    public List<ShortAnimeInfo>? ShortInfoList { get; set; }
+    [JsonProperty("bangumi")]
+    public FullAnimeInfo AnimeInfo { get; set; }
 }

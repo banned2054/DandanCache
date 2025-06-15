@@ -5,32 +5,32 @@ namespace DanmakuUpdate.Models.Dandan;
 public class ShortAnimeInfo
 {
     [JsonProperty("animeId")]
-    public int AnimeId;
+    public int AnimeId { get; set; }
 
     [JsonProperty("bangumiId")]
-    public string BangumiId = string.Empty;
+    public string BangumiId { get; set; } = string.Empty;
 
     [JsonProperty("animeTitle")]
-    public string AnimeTitle = string.Empty;
+    public string AnimeTitle { get; set; } = string.Empty;
 
     [JsonProperty("imageUrl")]
-    public string ImageUrl = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
 
     [JsonProperty("searchKeyword")]
-    public string SearchKeyword = string.Empty;
+    public string SearchKeyword { get; set; } = string.Empty;
 
     [JsonProperty("isOnAir")]
-    public bool IsOnAir;
+    public bool IsOnAir { get; set; }
 
     [JsonProperty("airDay")]
-    public int AirDay;
+    public int AirDay { get; set; }
 
     [JsonProperty("isFavorited")]
-    public bool IsFavorite;
+    public bool IsFavorite { get; set; }
 
     [JsonProperty("isRestricted")]
-    public bool IsRestricted;
+    public bool IsRestricted { get; set; }
 
     [JsonProperty("rating")]
-    public float Rating;
+    public float Rating { get; set; }
 }
