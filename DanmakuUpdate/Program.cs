@@ -9,6 +9,7 @@ internal class Program
         if (args.Length == 0) return;
         var db = new MyDbContext();
 
+        DotNetEnv.Env.Load();
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
         var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
         if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
