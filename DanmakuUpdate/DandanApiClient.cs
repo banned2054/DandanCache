@@ -1,38 +1,74 @@
-using DanmakuUpdate.Utils;
-using RestSharp;
+using DanmakuUpdate.Models.Dandan;
+using GetBangumiInfo.Models.Bangumi;
+using GetBangumiInfo.Utils;
+using Newtonsoft.Json;
 
 namespace DanmakuUpdate;
 
-internal class DandanApiClient
+public class DandanApiClient
 {
-    private readonly RestClient _client;
-    private readonly string     _appId;
-    private readonly string     _appSecret;
+    private readonly Dictionary<string, string> _headers;
 
     public DandanApiClient(string appId, string appSecret)
     {
-        _client    = new RestClient("https://api.dandanplay.net");
-        _appId     = appId;
-        _appSecret = appSecret;
+        _headers = new Dictionary<string, string>
+        {
+            { "accept", "application/json" },
+            { "X-AppId", appId },
+            { "X-AppSecret", appSecret }
+        };
     }
 
     public async Task<string> GetDanmakuAsync(int episodeId)
     {
-        var path      = $"/api/v2/comment/{episodeId}";
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var signature = DandanUtils.GenerateSignature(_appId, timestamp, path, _appSecret);
-
-        var request = new RestRequest(path);
-        request.AddHeader("X-AppId", _appId);
-        request.AddHeader("X-Timestamp", timestamp.ToString());
-        request.AddHeader("X-Signature", signature);
-
-        var response = await _client.ExecuteAsync(request);
-        if (!response.IsSuccessful)
+        var url = $"https://api.dandanplay.net/api/v2/comment/{episodeId}";
+        try
         {
-            throw new Exception($"API 请求失败: {response.StatusCode} - {response.Content}");
+            var json = await NetUtils.FetchAsync(url, _headers);
+            return json;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
         }
 
-        return response.Content!;
+        return string.Empty;
+    }
+
+    public async Task<List<ShortAnimeInfo>?> SearchAnimeBySeason(int year, int month)
+    {
+        if (year < 1917 || month < 1 || month > 12)
+        {
+            return null;
+        }
+
+        var url = $"https://api.dandanplay.net/api/v2/bangumi/season/anime/{year}/{month}?filterAdultContent=true";
+        try
+        {
+            var json = await NetUtils.FetchAsync(url, _headers);
+            var list = JsonConvert.DeserializeObject<AnimeList>(json);
+            return list!.ShortInfoList;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
+        }
+        return null;
+    }
+
+    public async Task<List<ShortAnimeInfo>?> GetRecentAnime()
+    {
+        const string url = "https://api.dandanplay.net/api/v2/bangumi/shin?filterAdultContent=true";
+        try
+        {
+            var json = await NetUtils.FetchAsync(url, _headers);
+            var list = JsonConvert.DeserializeObject<AnimeList>(json);
+            return list!.ShortInfoList;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
+        }
+        return null;
     }
 }
