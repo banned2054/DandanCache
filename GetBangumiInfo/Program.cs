@@ -7,7 +7,7 @@ internal class Program
     private static async Task Main()
     {
         DotNetEnv.Env.Load();
-        await UpdateController.UpdateBangumi();
+        //await UpdateController.UpdateBangumi();
         await UpdateController.UpdateByDandan();
     }
 }
