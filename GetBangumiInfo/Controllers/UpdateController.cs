@@ -1,4 +1,3 @@
-using DanmakuUpdate;
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils.Api;

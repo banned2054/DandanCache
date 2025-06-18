@@ -1,9 +1,8 @@
 using GetBangumiInfo.Models.Dandan;
 using GetBangumiInfo.Models.Response.Dandan;
-using GetBangumiInfo.Utils;
 using Newtonsoft.Json;
 
-namespace DanmakuUpdate;
+namespace GetBangumiInfo.Utils.Api;
 
 public class DandanPlayUtils
 {

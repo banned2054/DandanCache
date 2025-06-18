@@ -1,4 +1,3 @@
-using DanmakuUpdate;
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Anime;
 using GetBangumiInfo.Utils;
@@ -15,12 +14,7 @@ internal class Program
     private static async Task Main()
     {
         DotNetEnv.Env.Load();
-        await TestDanmakuUpdate();
-        //var idList = GetTodaySubjectId();
-        //foreach (var id in idList)
-        //{
-        //    await Bangumi2Bilibili(id);
-        //}
+        await TestBangumi2Bilibili();
     }
 
     private static async Task TestDanmakuUpdate()
@@ -47,20 +41,35 @@ internal class Program
         }
     }
 
-    private static async Task Bangumi2Bilibili(int subjectId)
+    private static async Task TestBangumi2Bilibili()
+    {
+        var db = new MyDbContext();
+        foreach (var notItem in db.MappingList.Where(e => e.BilibiliId == -1))
+        {
+            var id = await Bangumi2Bilibili(notItem.BangumiId);
+        }
+    }
+
+    private static async Task<int> Bangumi2Bilibili(int subjectId)
     {
         var json         = await GetBangumiDataJson();
         var responseJson = JsonConvert.DeserializeObject<BangumiDataResponse>(json);
         var animeList    = responseJson!.Items;
-        foreach (var anime in animeList!)
+        foreach (var bilibiliInfo in from anime in animeList!
+                                     let bangumiInfo =
+                                         anime.Sites!.FirstOrDefault(s => s.Site == "bangumi" &&
+                                                                          s.Id   == subjectId.ToString())
+                                     where bangumiInfo != null
+                                     select anime.Sites!.FirstOrDefault(s => s.Site == "bilibili")
+                                     into bilibiliInfo
+                                     where bilibiliInfo != null
+                                     select bilibiliInfo)
         {
-            var bangumiInfo = anime.Sites!.FirstOrDefault(s => s.Site == "bangumi" && s.Id == subjectId.ToString());
-            if (bangumiInfo == null) continue;
-            var bilibiliInfo = anime.Sites!.FirstOrDefault(s => s.Site == "bilibili");
-            Console.WriteLine(bilibiliInfo == null
-                                  ? $"Not bilibili, only bangumi, subject Id: {bangumiInfo.Id}"
-                                  : $"Bilibili, media Id: {bilibiliInfo.Id}");
+            var flag = int.TryParse(bilibiliInfo.Id, out var result);
+            return flag ? result : -1;
         }
+
+        return -1;
     }
 
 
@@ -98,8 +107,6 @@ internal class Program
         {
             return await DownloadBangumiDataJson();
         }
-
-        return await DownloadBangumiDataJson();
     }
 
     private static async Task<string> DownloadBangumiDataJson()
