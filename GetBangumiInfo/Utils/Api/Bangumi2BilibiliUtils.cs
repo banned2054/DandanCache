@@ -14,9 +14,9 @@ public class Bangumi2BilibiliUtils
     /// <returns>List of B2B</returns>
     private static async Task<string> DownloadBangumiDataJson()
     {
-        var response = await NetUtils.FetchAsync("https://unpkg.com/bangumi-data@0.3/dist/data.json",
-                                                 null,
-                                                 true);
+        var response = await NetUtils.FetchAsync<string>("https://unpkg.com/bangumi-data@0.3/dist/data.json",
+                                                         null,
+                                                         true);
         var responseJson = JsonConvert.DeserializeObject<BangumiDataResponse>(response);
         var animeList    = responseJson!.Items;
 

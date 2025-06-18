@@ -15,7 +15,7 @@ public class BilibiliUtils
             ["Accept"]          = "application/json",
             ["Accept-Language"] = "zh-CN,zh;q=0.9"
         };
-        var response = await NetUtils.FetchAsync(url, header);
+        var response = await NetUtils.FetchAsync<string>(url, header);
         var seasonId = -1;
         try
         {

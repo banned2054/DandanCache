@@ -23,7 +23,7 @@ public class DandanPlayUtils
         var url = $"https://api.dandanplay.net/api/v2/comment/{episodeId}";
         try
         {
-            var json = await NetUtils.FetchAsync(url, BuildHeaders());
+            var json = await NetUtils.FetchAsync<string>(url, BuildHeaders());
             return json;
         }
         catch (HttpRequestException ex)
@@ -44,7 +44,7 @@ public class DandanPlayUtils
         var url = $"https://api.dandanplay.net/api/v2/bangumi/season/anime/{year}/{month}?filterAdultContent=true";
         try
         {
-            var json = await NetUtils.FetchAsync(url, BuildHeaders());
+            var json = await NetUtils.FetchAsync<string>(url, BuildHeaders());
             var list = JsonConvert.DeserializeObject<AnimeSeasonResponse>(json);
             return list!.ShortInfoList;
         }
@@ -61,7 +61,7 @@ public class DandanPlayUtils
         const string url = "https://api.dandanplay.net/api/v2/bangumi/shin?filterAdultContent=true";
         try
         {
-            var json = await NetUtils.FetchAsync(url, BuildHeaders());
+            var json = await NetUtils.FetchAsync<string>(url, BuildHeaders());
             var list = JsonConvert.DeserializeObject<AnimeSeasonResponse>(json);
             return list!.ShortInfoList;
         }
@@ -78,7 +78,7 @@ public class DandanPlayUtils
         var url = $"https://api.dandanplay.net/api/v2/bangumi/{id}";
         try
         {
-            var json     = await NetUtils.FetchAsync(url, BuildHeaders());
+            var json     = await NetUtils.FetchAsync<string>(url, BuildHeaders());
             var response = JsonConvert.DeserializeObject<AnimeFullResponse>(json);
             return response!.AnimeInfo;
         }
@@ -101,7 +101,7 @@ public class DandanPlayUtils
 
         try
         {
-            var json = await NetUtils.FetchAsync(url, BuildHeaders());
+            var json = await NetUtils.FetchAsync<string>(url, BuildHeaders());
             var list = JsonConvert.DeserializeObject<AnimeSearchResponse>(json);
             return list!.ShortInfoList;
         }

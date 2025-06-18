@@ -17,7 +17,7 @@ public class BangumiUtils
         {
             ["accept"] = "application/json"
         };
-        var response         = await NetUtils.FetchAsync(url, headers);
+        var response         = await NetUtils.FetchAsync<string>(url, headers);
         var todayWeekday     = DateUtils.GetBeijingWeekday() + 1;
         var yesterdayWeekday = (todayWeekday + 6) % 7;
         var days             = JsonConvert.DeserializeObject<List<BangumiDay>>(response);
@@ -45,8 +45,9 @@ public class BangumiUtils
     public static async Task DownloadDumpFile()
     {
         var latestJson =
-            await NetUtils.FetchAsync("https://raw.githubusercontent.com/bangumi/Archive/master/aux/latest.json",
-                                      null, true);
+            await
+                NetUtils.FetchAsync<string>("https://raw.githubusercontent.com/bangumi/Archive/master/aux/latest.json",
+                                            null, true);
         var dict    = JObject.Parse(latestJson);
         var dumpUrl = dict["browser_download_url"]?.ToString() ?? "";
         if (string.IsNullOrEmpty(dumpUrl))
@@ -59,7 +60,7 @@ public class BangumiUtils
             return;
         }
 
-        await NetUtils.DownloadAsync(dumpUrl, "dump.zip", true);
+        await NetUtils.DownloadAsync(dumpUrl, "dump.zip", enableProxy : true);
     }
 
     public static Task UnzipDumpFile()
