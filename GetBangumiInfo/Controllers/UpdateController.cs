@@ -1,7 +1,9 @@
+using DanmakuUpdate;
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils.Api;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace GetBangumiInfo.Controllers;
 
@@ -119,5 +121,55 @@ public class UpdateController
         // ---------- 9. 提交 ----------
         await db.SaveChangesAsync();
         await tx.CommitAsync();
+    }
+
+    public static readonly Regex BangumiRegex = new(@"subject/(?<id>\d+)");
+
+    public static async Task UpdateByDandan()
+    {
+        var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
+        var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
+        if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
+        {
+            return;
+        }
+
+        var shortInfoList = await DandanPlayUtils.GetRecentAnime();
+        if (shortInfoList == null || shortInfoList.Count == 0)
+        {
+            return;
+        }
+        await using var db = new MyDbContext();
+
+        //dandan id不在mapping表里
+        foreach (var id in shortInfoList
+                          .Select(shortInfo => shortInfo.AnimeId)
+                          .Where(id => !db.MappingList
+                                          .Select(e => e.DandanId)
+                                          .Contains(id)
+                                ))
+        {
+            //获取bangumi subject id
+            var fullInfo = await DandanPlayUtils.GetFullAnimeInfo(id);
+            if (fullInfo == null) continue;
+            var match = BangumiRegex.Match(fullInfo.BangumiUrl);
+            if (!match.Success) continue;
+            var bangumiId = int.Parse(match.Groups["id"].Value);
+            if (bangumiId < 0) continue;
+
+            var nowItem = db.MappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
+            //bangumi subject id在不在表里
+            if (nowItem == default)
+            {
+                nowItem = new Mapping() { BangumiId = bangumiId, DandanId = id, BilibiliId = -1 };
+                db.MappingList.Add(nowItem);
+            }
+            else
+            {
+                nowItem.DandanId = id;
+            }
+        }
+
+        await db.SaveChangesAsync();
     }
 }

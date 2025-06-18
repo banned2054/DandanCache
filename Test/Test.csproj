@@ -13,6 +13,5 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\GetBangumiInfo\GetBangumiInfo.csproj" />
-		<ProjectReference Include="..\DanmakuUpdate\DanmakuUpdate.csproj" />
 	</ItemGroup>
 </Project>
