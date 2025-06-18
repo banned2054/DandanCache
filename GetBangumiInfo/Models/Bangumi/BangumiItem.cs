@@ -19,9 +19,6 @@ public class BangumiItem
     [JsonProperty("name_cn")]
     public string NameCn { get; set; } = string.Empty;
 
-    [JsonProperty("summary")]
-    public string Summary { get; set; } = string.Empty;
-
     [JsonProperty("air_date")]
     public string AirDate { get; set; } = string.Empty;
 
