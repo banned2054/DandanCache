@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace GetBangumiInfo.Models.Database;
@@ -6,10 +5,6 @@ namespace GetBangumiInfo.Models.Database;
 [Table("episodeListVeryCold")]
 public class EpisodeVeryCold
 {
-    [Key]
-    [Column("id")]
-    public int Id { get; set; }
-
     [Column("subjectId")]
     public int SubjectId { get; set; }
 
@@ -18,4 +13,7 @@ public class EpisodeVeryCold
 
     [Column("addInDate")]
     public DateTime AddInDate { get; set; }
+
+    [Column("isBilibili")]
+    public bool IsBilibili { get; set; }
 }

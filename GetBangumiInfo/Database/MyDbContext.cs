@@ -35,4 +35,19 @@ public class MyDbContext : DbContext
 
         optionsBuilder.UseNpgsql(connectSetting);
     }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // 联合主键：Episode（热表）
+        modelBuilder.Entity<Episode>()
+                    .HasKey(e => new { e.SubjectId, e.EpisodeNum });
+
+        // 联合主键：EpisodeCold（冷表）
+        modelBuilder.Entity<EpisodeCold>()
+                    .HasKey(e => new { e.SubjectId, e.EpisodeNum });
+
+        // 联合主键：EpisodeVeryCold（极冷表）
+        modelBuilder.Entity<EpisodeVeryCold>()
+                    .HasKey(e => new { e.SubjectId, e.EpisodeNum });
+    }
 }
