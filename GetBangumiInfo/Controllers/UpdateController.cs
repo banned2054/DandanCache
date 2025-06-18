@@ -8,6 +8,8 @@ namespace GetBangumiInfo.Controllers;
 
 public class UpdateController
 {
+    public static readonly Regex BangumiRegex = new(@"subject/(?<id>\d+)");
+
     public static async Task UpdateBangumi()
     {
         // ① 准备离线数据
@@ -122,8 +124,6 @@ public class UpdateController
         await tx.CommitAsync();
     }
 
-    public static readonly Regex BangumiRegex = new(@"subject/(?<id>\d+)");
-
     public static async Task UpdateByDandan()
     {
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
@@ -138,6 +138,7 @@ public class UpdateController
         {
             return;
         }
+
         await using var db = new MyDbContext();
 
         //dandan id不在mapping表里
@@ -167,6 +168,13 @@ public class UpdateController
             {
                 nowItem.DandanId = id;
             }
+        }
+
+        foreach (var notItem in db.MappingList.Where(e => e.BilibiliId == -1))
+        {
+            var id = await Bangumi2BilibiliUtils.Parser(notItem.BangumiId);
+            if (id == -1) continue;
+            notItem.BilibiliId = id;
         }
 
         await db.SaveChangesAsync();
