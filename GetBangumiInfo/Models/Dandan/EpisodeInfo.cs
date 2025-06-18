@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace DanmakuUpdate.Models.Dandan;
+namespace GetBangumiInfo.Models.Dandan;
 
 public class EpisodeInfo
 {

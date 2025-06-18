@@ -1,8 +1,9 @@
+using GetBangumiInfo.Models.Dandan;
 using Newtonsoft.Json;
 
-namespace DanmakuUpdate.Models.Dandan;
+namespace GetBangumiInfo.Models.Response.Dandan;
 
-public class SearchAnimeBySeason
+public class AnimeSearchResponse
 {
     [JsonProperty("errorCode")]
     public int ErrorCode { get; set; }
@@ -16,6 +17,6 @@ public class SearchAnimeBySeason
     [JsonProperty("hasMore")]
     public bool IsNotEnd { get; set; }
 
-    [JsonProperty("bangumiList")]
+    [JsonProperty("animes")]
     public List<ShortAnimeInfo>? ShortInfoList { get; set; }
 }

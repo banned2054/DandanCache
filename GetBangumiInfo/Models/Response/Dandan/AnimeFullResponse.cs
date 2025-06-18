@@ -1,9 +1,9 @@
-using DanmakuUpdate.Models.Dandan;
+using GetBangumiInfo.Models.Dandan;
 using Newtonsoft.Json;
 
-namespace DanmakuUpdate.Models.Net;
+namespace GetBangumiInfo.Models.Response.Dandan;
 
-public class ResponseAnimeInfo
+public class AnimeFullResponse
 {
     [JsonProperty("errorCode")]
     public int ErrorCode { get; set; }
@@ -15,5 +15,5 @@ public class ResponseAnimeInfo
     public bool IsSuccess { get; set; }
 
     [JsonProperty("bangumi")]
-    public FullAnimeInfo AnimeInfo { get; set; }
+    public FullAnimeInfo? AnimeInfo { get; set; }
 }
