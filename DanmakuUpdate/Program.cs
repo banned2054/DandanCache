@@ -17,19 +17,18 @@ internal class Program
             return;
         }
 
-        var client = new DandanApiClient(dandanAppId, dandanAppSecret);
         if (args[0] == "hot")
         {
             foreach (var episode in db.EpisodeList)
             {
-                var danmaku = await client.GetDanmakuAsync(episode.Id);
+                var danmaku = await DandanPlayUtils.GetDanmakuAsync(episode.Id);
             }
         }
         else
         {
             foreach (var episode in db.EpisodeListCold)
             {
-                var danmaku = await client.GetDanmakuAsync(episode.Id);
+                var danmaku = await DandanPlayUtils.GetDanmakuAsync(episode.Id);
             }
         }
     }
