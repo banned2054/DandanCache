@@ -5,6 +5,6 @@ namespace GetBangumiInfo.Models.Response.Dandan;
 
 public class DanmakuResponse
 {
-    [JsonProperty("seasonId")]
+    [JsonProperty("comments")]
     public List<DanmakuEntity>? DanmakuList { get; set; }
 }
