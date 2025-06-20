@@ -21,7 +21,7 @@ public class DandanPlayUtils
 
     public static async Task<ScraperDanmaku?> GetDanmakuAsync(int episodeId)
     {
-        var url = $"https://api.dandanplay.net/api/v2/comment/{episodeId}";
+        var url = $"https://api.dandanplay.net/api/v2/comment/{episodeId}?withRelated=true";
         try
         {
             var json        = await NetUtils.FetchAsync<string>(url, BuildHeaders());
