@@ -14,5 +14,5 @@ public class Mapping
     public int BilibiliId { get; set; }
 
     [Column("dandan_id")]
-    public float? DandanId { get; set; }
+    public int DandanId { get; set; }
 }

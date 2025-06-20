@@ -13,4 +13,7 @@ public class Episode
 
     [Column("isBilibili")]
     public bool IsBilibili { get; set; }
+
+    [Column("Id")]
+    public int Id { get; set; }
 }
