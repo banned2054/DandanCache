@@ -2,6 +2,7 @@ using RestSharp;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using Newtonsoft.Json;
 
 namespace GetBangumiInfo.Utils;
 
@@ -10,10 +11,28 @@ public static class NetUtils
     public static async Task<T> FetchAsync<T>(string                      url,
                                               Dictionary<string, string>? headers     = null,
                                               bool                        enableProxy = false,
+                                              object?                     body        = null, // 可选：用于 POST 请求体
                                               Func<byte[], T>?            parser      = null)
     {
         var client  = CreateRestClient(enableProxy);
         var request = CreateRestRequest(url, headers);
+
+        if (body != null)
+        {
+            request.Method = Method.Post;
+
+            // 如果传的是字节流，认为是二进制上传
+            if (body is byte[] bytes)
+            {
+                request.AddBody(bytes);
+            }
+            else
+            {
+                // 默认序列化为 JSON
+                var json = JsonConvert.SerializeObject(body);
+                request.AddStringBody(json, DataFormat.Json);
+            }
+        }
 
         var response = await client.ExecuteAsync(request);
 
@@ -22,23 +41,22 @@ public static class NetUtils
             throw new HttpRequestException($"Fetch failed: {url}, Status: {response.StatusCode}");
         }
 
-        var bytes = response.RawBytes;
+        var respBytes = response.RawBytes;
 
         if (parser != null)
         {
-            return parser(bytes);
+            return parser(respBytes);
         }
 
-        // 自动推断：string / byte[]
         if (typeof(T) == typeof(string))
         {
-            object result = Encoding.UTF8.GetString(bytes);
+            object result = Encoding.UTF8.GetString(respBytes);
             return (T)result;
         }
 
         if (typeof(T) == typeof(byte[]))
         {
-            object result = bytes;
+            object result = respBytes;
             return (T)result;
         }
 
