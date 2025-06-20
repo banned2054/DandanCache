@@ -23,21 +23,21 @@ public class UpdateController
     //    await using var tx = await db.Database.BeginTransactionAsync();
 
     //    // ---------- 1. 读取旧表 ----------
-    //    var oldHotList  = await db.EpisodeList.AsNoTracking().ToListAsync();
+    //    var oldHotList = await db.EpisodeList.AsNoTracking().ToListAsync();
     //    var oldColdList = await db.EpisodeListCold.AsNoTracking().ToListAsync();
 
-    //    var oldHotIds  = oldHotList.Select(e => e.Id).ToHashSet();
+    //    var oldHotIds = oldHotList.Select(e => e.Id).ToHashSet();
     //    var oldColdIds = oldColdList.Select(e => e.Id).ToHashSet();
 
     //    // ---------- 2. 生成新热表 ----------
     //    var hotEpisodes = hotSubjectIds
     //                     .SelectMany(BangumiUtils.GetSubjectEpisodeList)
     //                     .Select(j => new Episode
-    //                      {
-    //                          Id         = j.GetProperty("id").GetInt32(),
-    //                          SubjectId  = j.GetProperty("subject_id").GetInt32(),
-    //                          EpisodeNum = j.TryGetProperty("sort", out var s) ? s.GetSingle() : null
-    //                      })
+    //                     {
+    //                         Id = j.GetProperty("id").GetInt32(),
+    //                         SubjectId = j.GetProperty("subject_id").GetInt32(),
+    //                         EpisodeNum = j.TryGetProperty("sort", out var s) ? s.GetSingle() : null
+    //                     })
     //                     .ToList();
 
     //    var newHotIds = hotEpisodes.Select(e => e.Id).ToHashSet();
@@ -46,20 +46,20 @@ public class UpdateController
     //    var coldEpisodes = coldSubjectIds
     //                      .SelectMany(BangumiUtils.GetSubjectEpisodeList)
     //                      .Select(j => new EpisodeCold
-    //                       {
-    //                           Id         = j.GetProperty("id").GetInt32(),
-    //                           SubjectId  = j.GetProperty("subject_id").GetInt32(),
-    //                           EpisodeNum = j.TryGetProperty("sort", out var s) ? s.GetSingle() : null
-    //                       })
+    //                      {
+    //                          Id = j.GetProperty("id").GetInt32(),
+    //                          SubjectId = j.GetProperty("subject_id").GetInt32(),
+    //                          EpisodeNum = j.TryGetProperty("sort", out var s) ? s.GetSingle() : null
+    //                      })
     //                      .Where(e => !newHotIds.Contains(e.Id))
     //                      .ToList();
 
     //    var newColdIds = coldEpisodes.Select(e => e.Id).ToHashSet();
 
     //    // ---------- 4. 差集运算 ----------
-    //    var hotToInsert     = hotEpisodes.Where(e => !oldHotIds.Contains(e.Id)).ToList();
-    //    var coldToInsert    = coldEpisodes.Where(e => !oldColdIds.Contains(e.Id)).ToList();
-    //    var hotToDeleteIds  = oldHotIds.Except(newHotIds).ToList();
+    //    var hotToInsert = hotEpisodes.Where(e => !oldHotIds.Contains(e.Id)).ToList();
+    //    var coldToInsert = coldEpisodes.Where(e => !oldColdIds.Contains(e.Id)).ToList();
+    //    var hotToDeleteIds = oldHotIds.Except(newHotIds).ToList();
     //    var coldToDeleteIds = oldColdIds.Except(newColdIds).ToList();
 
     //    // ---------- 5. 删掉过时行 ----------
@@ -74,7 +74,7 @@ public class UpdateController
     //                .ExecuteDeleteAsync();
 
     //    // ---------- 6. 插入新增行 ----------
-    //    if (hotToInsert.Count  > 0) await db.EpisodeList.AddRangeAsync(hotToInsert);
+    //    if (hotToInsert.Count > 0) await db.EpisodeList.AddRangeAsync(hotToInsert);
     //    if (coldToInsert.Count > 0) await db.EpisodeListCold.AddRangeAsync(coldToInsert);
 
     //    // ---------- 7. VeryCold：新增 ----------
@@ -89,21 +89,21 @@ public class UpdateController
     //        var veryColdCandidates =
     //            oldHotList.Where(e => idsMovedToVeryCold.Contains(e.Id))
     //                      .Select(e => new EpisodeVeryCold
-    //                       {
-    //                           Id         = e.Id,
-    //                           SubjectId  = e.SubjectId,
-    //                           EpisodeNum = e.EpisodeNum ?? 0,
-    //                           AddInDate  = DateTime.UtcNow
-    //                       })
+    //                      {
+    //                          Id = e.Id,
+    //                          SubjectId = e.SubjectId,
+    //                          EpisodeNum = e.EpisodeNum ?? 0,
+    //                          AddInDate = DateTime.UtcNow
+    //                      })
     //                      .Concat(
     //                              oldColdList.Where(e => idsMovedToVeryCold.Contains(e.Id))
     //                                         .Select(e => new EpisodeVeryCold
-    //                                          {
-    //                                              Id         = e.Id,
-    //                                              SubjectId  = e.SubjectId,
-    //                                              EpisodeNum = e.EpisodeNum ?? 0,
-    //                                              AddInDate  = DateTime.UtcNow
-    //                                          }))
+    //                                         {
+    //                                             Id = e.Id,
+    //                                             SubjectId = e.SubjectId,
+    //                                             EpisodeNum = e.EpisodeNum ?? 0,
+    //                                             AddInDate = DateTime.UtcNow
+    //                                         }))
     //                      .Where(vc => !existedVcIds.Contains(vc.Id))
     //                      .ToList();
 
