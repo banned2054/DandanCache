@@ -1,4 +1,5 @@
 using GetBangumiInfo.Models.Dandan;
+using GetBangumiInfo.Models.Danmaku;
 using GetBangumiInfo.Models.Response.Dandan;
 using Newtonsoft.Json;
 
@@ -18,20 +19,40 @@ public class DandanPlayUtils
         };
     }
 
-    public static async Task<string> GetDanmakuAsync(int episodeId)
+    public static async Task<ScraperDanmaku?> GetDanmakuAsync(int episodeId)
     {
         var url = $"https://api.dandanplay.net/api/v2/comment/{episodeId}";
         try
         {
-            var json = await NetUtils.FetchAsync<string>(url, BuildHeaders());
-            return json;
+            var json        = await NetUtils.FetchAsync<string>(url, BuildHeaders());
+            var danmakuList = JsonConvert.DeserializeObject<DanmakuResponse>(json)!.DanmakuList;
+
+            var danmaku = new ScraperDanmaku
+            {
+                ChatServer = "api.dandanplay.net"
+            };
+            foreach (var danmakuEntity in danmakuList!)
+            {
+                var danmakuText = new ScraperDanmakuText();
+                var arr         = danmakuEntity.Param.Split(",");
+                danmakuText.Progress = (int)(Convert.ToDouble(arr[0]) * 1000);
+                danmakuText.Mode     = Convert.ToInt32(arr[1]);
+                danmakuText.Color    = Convert.ToUInt32(arr[2]);
+                danmakuText.MidHash  = arr[3];
+                danmakuText.Id       = danmakuEntity.Cid;
+                danmakuText.Content  = danmakuEntity.Message;
+
+                danmaku.Items.Add(danmakuText);
+            }
+
+            return danmaku;
         }
         catch (HttpRequestException ex)
         {
             Console.WriteLine($"Request failed: {ex.Message}");
         }
 
-        return string.Empty;
+        return null;
     }
 
     public static async Task<List<ShortAnimeInfo>?> SearchAnimeBySeason(int year, int month)
