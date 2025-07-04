@@ -1,12 +1,28 @@
+using GetBangumiInfo.Models.Response.Bilibili;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 namespace GetBangumiInfo.Utils.Api;
 
 public class BilibiliUtils
 {
+    public static readonly string BaseUrl = "https://api.bilibili.com";
+
+    private static async Task<T> Fetch<T>(string                      path,
+                                          Dictionary<string, string>? header = null)
+    {
+        header = header ?? new Dictionary<string, string>
+        {
+            ["User-Agent"] =
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            ["Referer"] = "https://www.bilibili.com",
+        };
+        var response = await NetUtils.FetchAsync<T>($"{BaseUrl}/{path}", header);
+        return response;
+    }
+
     public static async Task<int> GetSeasonIdByMediaId(string mediaId)
     {
-        var url = $"https://api.bilibili.com/pgc/review/user?media_id={mediaId}";
         var header = new Dictionary<string, string>
         {
             ["User-Agent"] =
@@ -15,7 +31,7 @@ public class BilibiliUtils
             ["Accept"]          = "application/json",
             ["Accept-Language"] = "zh-CN,zh;q=0.9"
         };
-        var response = await NetUtils.FetchAsync<string>(url, header);
+        var response = await Fetch<string>($"pgc/review/user?media_id={mediaId}", header);
         var seasonId = -1;
         try
         {
@@ -40,5 +56,17 @@ public class BilibiliUtils
         }
 
         return seasonId;
+    }
+
+    public static async Task GetCidListBySeasonIdAsync(long seasonId)
+    {
+        var response = await Fetch<string>($"pgc/view/web/ep/list?season_id={seasonId}");
+        Console.WriteLine(response);
+        var result = JsonConvert.DeserializeObject<BilibiliCidListResponse>(response);
+        if (result?.Result?.Episodes == null || result.Result.Episodes.Count == 0) return;
+        foreach (var episode in result.Result.Episodes.OrderBy(e => e.PubTimeUnix))
+        {
+            Console.WriteLine($"{episode.PubDate} {episode.PubTimeUnix}");
+        }
     }
 }
