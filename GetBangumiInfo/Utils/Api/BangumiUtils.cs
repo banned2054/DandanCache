@@ -104,7 +104,7 @@ public class BangumiUtils
     }
 
 
-    public static IEnumerable<JsonElement> GetSubjectEpisodeList(int subjectId)
+    public static IEnumerable<BangumiEpisode> GetSubjectEpisodeList(int subjectId)
     {
         const int    limit    = 20;
         const string fileName = "episode.jsonlines";
@@ -124,6 +124,7 @@ public class BangumiUtils
             try
             {
                 var data = JsonConvert.DeserializeObject<BangumiEpisode>(line);
+                results.Add(data!);
             }
             catch
             {
@@ -132,8 +133,7 @@ public class BangumiUtils
         }
 
         return results
-              .Where(e => e.TryGetProperty("sort", out var sortProp) && sortProp.TryGetSingle(out _))
-              .OrderBy(e => e.GetProperty("sort").GetSingle())
+              .OrderBy(e => e.Sort)
               .Take(limit)
               .ToList();
     }
