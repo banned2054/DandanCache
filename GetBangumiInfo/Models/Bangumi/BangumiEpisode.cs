@@ -1,4 +1,4 @@
-using System.Globalization;
+using GetBangumiInfo.Utils;
 using Newtonsoft.Json;
 
 namespace GetBangumiInfo.Models.Bangumi;
@@ -21,12 +21,9 @@ public class BangumiEpisode
     public string? AirDateStr { get; set; }
 
     [JsonIgnore]
-    public DateTime? AirDate => AirDateStr == null
+    public DateTimeOffset? AirDate => AirDateStr == null
         ? null
-        : DateTime.SpecifyKind(
-                               DateTime.ParseExact(AirDateStr, "yyyy-MM-dd", CultureInfo.InvariantCulture),
-                               DateTimeKind.Unspecified
-                              ).AddHours(8); // 转为东八区时间（假设原始是本地零点）
+        : DateUtils.ParseBeijingTime(AirDateStr, "yyyy-MM-dd");
 
     [JsonProperty("subject_id")]
     public int? SubjectId { get; set; }

@@ -1,24 +1,42 @@
+using System.Globalization;
 using TimeZoneConverter;
 
 namespace GetBangumiInfo.Utils;
 
 public class DateUtils
 {
-    public static DateTime GetBeijingNow()
+    /// <summary>
+    /// 获取北京时间的现在的时间
+    /// </summary>
+    public static DateTimeOffset GetBeijingNow()
     {
         var tz = TZConvert.GetTimeZoneInfo("Asia/Shanghai");
-        return TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
+        return TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, tz); // 正确保留 +08:00
     }
 
+
+    /// <summary>
+    /// 获取北京时间的星期（0=周一，6=周日）
+    /// </summary>
     public static int GetBeijingWeekday()
     {
-        return ((int)GetBeijingNow().DayOfWeek + 6) % 7;
+        var weekday = GetBeijingNow().DayOfWeek;
+        return ((int)weekday + 6) % 7;
     }
 
-    public static bool IsWithinThreeMonths(DateTime date)
+    /// <summary>
+    /// 判断一个时间是否在北京时间的最近三个月内
+    /// </summary>
+    public static bool IsWithinThreeMonths(DateTimeOffset inputTime)
     {
-        var today          = GetBeijingNow().Date; // 可以在调用处先传入 today，避免重复获取
+        var today          = GetBeijingNow().Date;
         var threeMonthsAgo = today.AddMonths(-3);
-        return date.Date >= threeMonthsAgo && date.Date <= today;
+        return inputTime.Date >= threeMonthsAgo && inputTime.Date <= today;
+    }
+
+    public static DateTimeOffset ParseBeijingTime(string timeStr, string format = "yyyy-MM-dd HH:mm:ss")
+    {
+        var dt = DateTime.ParseExact(timeStr, format, CultureInfo.InvariantCulture, DateTimeStyles.None);
+        return new DateTimeOffset(dt, TimeSpan.FromHours(8)); // 明确标记为北京时间
     }
 }
