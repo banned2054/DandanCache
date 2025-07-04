@@ -7,12 +7,15 @@ namespace GetBangumiInfo.Models.Database;
 public class Mapping
 {
     [Key]
-    [Column("bangumi_subject_id")]
+    [Column("bangumiSubjectId")]
     public int BangumiId { get; set; }
 
-    [Column("bilibili_season_id")]
+    [Column("bilibiliSeasonId")]
     public int BilibiliId { get; set; }
 
-    [Column("dandan_id")]
+    [Column("dandanId")]
     public int DandanId { get; set; }
+
+    [Column("dandanId")]
+    public DateTime? AirDate { get; set; }
 }

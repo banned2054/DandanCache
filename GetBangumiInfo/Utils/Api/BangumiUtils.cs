@@ -109,7 +109,7 @@ public class BangumiUtils
         const int    limit    = 20;
         const string fileName = "episode.jsonlines";
 
-        var results = new List<JsonElement>();
+        var results = new List<BangumiEpisode>();
         var path    = Path.Combine(AppContext.BaseDirectory, fileName);
 
         using var reader = new StreamReader(path);
@@ -123,14 +123,7 @@ public class BangumiUtils
 
             try
             {
-                using var doc  = JsonDocument.Parse(line);
-                var       root = doc.RootElement;
-
-                if (StringUtils.IsValid(root, subjectId))
-                {
-                    // 深拷贝避免 JsonDocument Dispose 后失效
-                    results.Add(JsonDocument.Parse(root.GetRawText()).RootElement);
-                }
+                var data = JsonConvert.DeserializeObject<BangumiEpisode>(line);
             }
             catch
             {
