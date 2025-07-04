@@ -1,7 +1,6 @@
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils.Api;
-using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 
 namespace GetBangumiInfo.Controllers;
@@ -10,16 +9,16 @@ public class UpdateController
 {
     public static readonly Regex BangumiRegex = new(@"subject/(?<id>\d+)");
 
-    //public static async Task UpdateBangumi()
-    //{
-    //    // ① 准备离线数据
-    //    await BangumiUtils.DownloadDumpFile();
-    //    await BangumiUtils.UnzipDumpFile();
-
-    //    // ② 取本周番剧 SubjectId 列表
-    //    var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
-
-    //    await using var db = new MyDbContext();
+    public static async Task UpdateBangumi()
+    {
+        // ① 准备离线数据
+        await BangumiUtils.DownloadDumpFile();
+        await BangumiUtils.UnzipDumpFile();
+        await using var db = new MyDbContext();
+        // ② 取本周番剧 SubjectId 列表
+        var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
+    }
+    
     //    await using var tx = await db.Database.BeginTransactionAsync();
 
     //    // ---------- 1. 读取旧表 ----------
@@ -123,6 +122,7 @@ public class UpdateController
     //    await db.SaveChangesAsync();
     //    await tx.CommitAsync();
     //}
+
 
     public static async Task UpdateByDandan()
     {
