@@ -39,4 +39,14 @@ public class DateUtils
         var dt = DateTime.ParseExact(timeStr, format, CultureInfo.InvariantCulture, DateTimeStyles.None);
         return new DateTimeOffset(dt, TimeSpan.FromHours(8)); // 明确标记为北京时间
     }
+
+    /// <summary>
+    /// 从 Unix 时间戳转换为北京时间的时间（DateTimeOffset）
+    /// </summary>
+    public static DateTimeOffset FromUnixTimeToBeijing(long unixTime)
+    {
+        var utcTime     = DateTimeOffset.FromUnixTimeSeconds(unixTime);
+        var beijingZone = TZConvert.GetTimeZoneInfo("Asia/Shanghai");
+        return TimeZoneInfo.ConvertTime(utcTime, beijingZone);
+    }
 }
