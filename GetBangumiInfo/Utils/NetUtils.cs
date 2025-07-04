@@ -1,8 +1,8 @@
+using Newtonsoft.Json;
 using RestSharp;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Newtonsoft.Json;
 
 namespace GetBangumiInfo.Utils;
 
