@@ -11,7 +11,7 @@ public class FullAnimeInfo
     public List<TitleInfo>? TitleList { get; set; }
 
     [JsonProperty("episodes")]
-    public List<EpisodeInfo>? EpisodeList { get; set; }
+    public List<DandanEpisode>? EpisodeList { get; set; }
 
     [JsonProperty("bangumiUrl")]
     public string BangumiUrl { get; set; } = string.Empty;
