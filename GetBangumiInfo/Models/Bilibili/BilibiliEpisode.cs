@@ -1,8 +1,9 @@
+using GetBangumiInfo.Utils;
 using Newtonsoft.Json;
 
 namespace GetBangumiInfo.Models.Bilibili;
 
-public class EpisodeInfo
+public class BilibiliEpisode
 {
     [JsonProperty("cid")]
     public long Cid { get; set; }
@@ -11,10 +12,7 @@ public class EpisodeInfo
     public long PubTimeUnix { get; set; }
 
     [JsonIgnore]
-    public DateTime PubDate =>
-        DateTimeOffset.FromUnixTimeSeconds(PubTimeUnix)
-                      .ToOffset(TimeSpan.FromHours(8)) // 北京时间
-                      .DateTime;
+    public DateTimeOffset PubDate => DateUtils.FromUnixTimeToBeijing(PubTimeUnix);
 
     [JsonProperty("link")]
     public string? Link { get; set; }
