@@ -43,8 +43,7 @@ public class UpdateController
 
         if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
         {
-            if (string.IsNullOrEmpty(dandanAppId)) Console.WriteLine("Dandan app id is null");
-            if (string.IsNullOrEmpty(dandanAppSecret)) Console.WriteLine("Dandan app secret is null");
+            Console.WriteLine("Missing Dandan App ID or Secret");
             return;
         }
 
@@ -59,49 +58,57 @@ public class UpdateController
 
         await using var db = new MyDbContext();
 
-        //dandan id不在mapping表里
-        foreach (var id in shortInfoList
-                          .Select(shortInfo => shortInfo.AnimeId)
-                          .Where(id => !db.MappingList
-                                          .Select(e => e.DandanId)
-                                          .Contains(id)
-                                ))
+        // 🌟 1. 一次性加载 MappingList 数据，提高查找效率
+        var allMappings        = await db.MappingList.ToListAsync();
+        var existingDandanIds  = allMappings.Select(m => m.DandanId).ToHashSet();
+
+        // 🌟 2. 添加或更新 DandanId 与 BangumiId
+        foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.AnimeId)))
         {
-            //获取bangumi subject id
-            var fullInfo = await DandanPlayUtils.GetFullAnimeInfo(id);
+            var fullInfo = await DandanPlayUtils.GetFullAnimeInfo(shortInfo.AnimeId);
             if (fullInfo == null) continue;
+
             var match = BangumiRegex.Match(fullInfo.BangumiUrl);
             if (!match.Success) continue;
+
             var bangumiId = int.Parse(match.Groups["id"].Value);
             if (bangumiId < 0) continue;
 
-            var nowItem = db.MappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
-            //bangumi subject id在不在表里
-            if (nowItem == default)
+            var nowItem = allMappings.FirstOrDefault(e => e.BangumiId == bangumiId);
+            if (nowItem == null)
             {
-                nowItem = new Mapping() { BangumiId = bangumiId, DandanId = id, BilibiliId = -1 };
+                nowItem = new Mapping
+                {
+                    BangumiId  = bangumiId,
+                    DandanId   = shortInfo.AnimeId,
+                    BilibiliId = -1
+                };
                 db.MappingList.Add(nowItem);
+                allMappings.Add(nowItem); // 保持本地缓存一致
             }
             else
             {
-                nowItem.DandanId = id;
+                nowItem.DandanId = shortInfo.AnimeId;
             }
         }
 
-        foreach (var notItem in db.MappingList.Where(e => e.BilibiliId == -1))
+        // 🌟 3. 解析 BilibiliId
+        foreach (var item in allMappings.Where(e => e.BilibiliId == -1))
         {
-            var id = await Bangumi2BilibiliUtils.Parser(notItem.BangumiId);
-            if (id == -1) continue;
-            notItem.BilibiliId = id;
+            var bilibiliId = await Bangumi2BilibiliUtils.Parser(item.BangumiId);
+            if (bilibiliId == -1) continue;
+            item.BilibiliId = bilibiliId;
         }
 
-        foreach (var mapping in db.MappingList.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
+        // 🌟 4. 填补 AirDate 和 IsJapaneseAnime
+        foreach (var item in allMappings.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
         {
-            var info = BangumiUtils.GetSubjectInfo(mapping.BangumiId);
-            mapping.AirDate         = info?.Date!;
-            mapping.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
+            var info = BangumiUtils.GetSubjectInfo(item.BangumiId);
+            item.AirDate         = info?.Date!;
+            item.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
         }
 
+        // ✅ 最后统一保存
         await db.SaveChangesAsync();
     }
 }
