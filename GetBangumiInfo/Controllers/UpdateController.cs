@@ -3,7 +3,6 @@ using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils.Api;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
-using GetBangumiInfo.Utils;
 
 namespace GetBangumiInfo.Controllers;
 
@@ -37,15 +36,16 @@ public class UpdateController
 
     public static async Task UpdateByDandan()
     {
-        await BangumiUtils.DownloadDumpFile();
-        await BangumiUtils.UnzipDumpFile();
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
         var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
+
         if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
         {
             return;
         }
-
+        
+        await BangumiUtils.DownloadDumpFile();
+        await BangumiUtils.UnzipDumpFile();
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
         {
@@ -93,7 +93,7 @@ public class UpdateController
         foreach (var mapping in db.MappingList.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
         {
             var info = BangumiUtils.GetSubjectInfo(mapping.BangumiId);
-            mapping.AirDate         = info?.AirDate;
+            mapping.AirDate         = info?.Date!;
             mapping.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
         }
 
