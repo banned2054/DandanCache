@@ -18,7 +18,7 @@ public class BangumiUtils
             ["accept"] = "application/json"
         };
         var response         = await NetUtils.FetchAsync<string>(url, headers);
-        var todayWeekday     = DateUtils.GetBeijingWeekday() + 1;
+        var todayWeekday     = TimeUtils.GetNowWeekday() + 1;
         var yesterdayWeekday = (todayWeekday + 6) % 7;
         var days             = JsonConvert.DeserializeObject<List<BangumiDay>>(response);
         foreach (var day in days!)

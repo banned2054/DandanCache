@@ -25,6 +25,6 @@ public class StringUtils
         var airdateStr = airdateProp.GetString();
         if (string.IsNullOrWhiteSpace(airdateStr)) return false;
 
-        return DateTime.TryParse(airdateStr, out var airdate) && DateUtils.IsWithinThreeMonths(airdate);
+        return DateTime.TryParse(airdateStr, out var airdate) && TimeUtils.IsWithinThreeMonths(airdate);
     }
 }

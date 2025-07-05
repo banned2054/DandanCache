@@ -12,7 +12,7 @@ public class BilibiliEpisode
     public long PubTimeUnix { get; set; }
 
     [JsonIgnore]
-    public DateTimeOffset PubDate => DateUtils.FromUnixTimeToBeijing(PubTimeUnix);
+    public DateTimeOffset PubDate => TimeUtils.ParseUnix(PubTimeUnix);
 
     [JsonProperty("link")]
     public string? Link { get; set; }

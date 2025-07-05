@@ -23,7 +23,7 @@ public class BangumiEpisode
     [JsonIgnore]
     public DateTimeOffset? AirDate => AirDateStr == null
         ? null
-        : DateUtils.ParseBeijingTime(AirDateStr, "yyyy-MM-dd");
+        : TimeUtils.ParseString(AirDateStr, "yyyy-MM-dd");
 
     [JsonProperty("subject_id")]
     public int? SubjectId { get; set; }
