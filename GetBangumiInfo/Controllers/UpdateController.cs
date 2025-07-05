@@ -3,6 +3,7 @@ using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils.Api;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using GetBangumiInfo.Utils;
 
 namespace GetBangumiInfo.Controllers;
 
@@ -19,19 +20,19 @@ public class UpdateController
         // 初始化数据库
         await using var db = new MyDbContext();
 
-        // ② 取本周番剧 SubjectId 列表
-        var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
+        //// ② 取本周番剧 SubjectId 列表
+        //var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
 
-        await using var tx = await db.Database.BeginTransactionAsync();
+        //await using var tx = await db.Database.BeginTransactionAsync();
 
-        // ---------- 1. 读取旧表 ----------
-        var oldHotList  = await db.EpisodeList.AsNoTracking().ToListAsync();
-        var oldColdList = await db.EpisodeListCold.AsNoTracking().ToListAsync();
+        //// ---------- 1. 读取旧表 ----------
+        //var oldHotList  = await db.EpisodeList.AsNoTracking().ToListAsync();
+        //var oldColdList = await db.EpisodeListCold.AsNoTracking().ToListAsync();
 
-        var oldHotIds  = oldHotList.Select(e => e.Id).ToHashSet();
-        var oldColdIds = oldColdList.Select(e => e.Id).ToHashSet();
+        //var oldHotIds  = oldHotList.Select(e => e.Id).ToHashSet();
+        //var oldColdIds = oldColdList.Select(e => e.Id).ToHashSet();
 
-        await tx.CommitAsync();
+        //await tx.CommitAsync();
     }
 
     public static async Task UpdateByDandan()
@@ -85,6 +86,13 @@ public class UpdateController
             var id = await Bangumi2BilibiliUtils.Parser(notItem.BangumiId);
             if (id == -1) continue;
             notItem.BilibiliId = id;
+        }
+
+        foreach (var mapping in db.MappingList.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
+        {
+            var info = BangumiUtils.GetSubjectInfo(mapping.BangumiId);
+            mapping.AirDate         = info?.AirDate;
+            mapping.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
         }
 
         await db.SaveChangesAsync();
