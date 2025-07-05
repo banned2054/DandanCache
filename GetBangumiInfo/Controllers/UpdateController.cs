@@ -36,19 +36,24 @@ public class UpdateController
 
     public static async Task UpdateByDandan()
     {
+        Console.WriteLine("Updating dandan...");
+        Console.WriteLine("==================");
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
         var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
 
         if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
         {
+            if (string.IsNullOrEmpty(dandanAppId)) Console.WriteLine("Dandan app id is null");
+            if (string.IsNullOrEmpty(dandanAppSecret)) Console.WriteLine("Dandan app secret is null");
             return;
         }
-        
+
         await BangumiUtils.DownloadDumpFile();
         await BangumiUtils.UnzipDumpFile();
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
         {
+            Console.WriteLine("Recent dandan data is null");
             return;
         }
 
