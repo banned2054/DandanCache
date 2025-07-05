@@ -16,7 +16,7 @@ public class Mapping
     [Column("dandanId")]
     public int DandanId { get; set; }
 
-    [Column("dandanId")]
+    [Column("airDate")]
     public DateTimeOffset? AirDate { get; set; }
 
     [Column("isJapaneseAnime")]
