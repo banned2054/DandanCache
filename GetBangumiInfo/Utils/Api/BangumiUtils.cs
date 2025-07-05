@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using GetBangumiInfo.Models.Bangumi;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -6,37 +7,23 @@ namespace GetBangumiInfo.Utils.Api;
 
 public class BangumiUtils
 {
-    public static async Task<(List<int>, List<int>)> GetCalendar()
+    public static async Task<List<BangumiItem>> GetCalendar()
     {
         const string url = "https://api.bgm.tv/calendar";
 
-        var hotIdList  = new List<int>();
-        var coldIdList = new List<int>();
         var headers = new Dictionary<string, string>()
         {
             ["accept"] = "application/json"
         };
-        var response         = await NetUtils.FetchAsync<string>(url, headers);
-        var todayWeekday     = TimeUtils.GetNowWeekday() + 1;
-        var yesterdayWeekday = (todayWeekday + 6) % 7;
-        var days             = JsonConvert.DeserializeObject<List<BangumiDay>>(response);
+        var response = await NetUtils.FetchAsync<string>(url, headers);
+        var days     = JsonConvert.DeserializeObject<List<BangumiDay>>(response);
+        var result   = new List<BangumiItem>();
         foreach (var day in days!)
         {
-            if (day.Weekday!.Id == todayWeekday || day.Weekday.Id == yesterdayWeekday)
-            {
-                hotIdList.AddRange(from item in day.Items!
-                                   where !(item.Rating!.Score! <= 5)
-                                   select item.Id!.Value);
-            }
-            else
-            {
-                coldIdList.AddRange(from item in day.Items!
-                                    where !(item.Rating!.Score! <= 5)
-                                    select item.Id!.Value);
-            }
+            result.AddRange(day.Items!);
         }
 
-        return (hotIdList, coldIdList);
+        return result;
     }
 
     public static async Task DownloadDumpFile()
