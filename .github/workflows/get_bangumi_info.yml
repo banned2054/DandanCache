@@ -2,25 +2,27 @@
 name: Get Bangumi Info
 
 on:
-  schedule:
-    - cron: "5 16 * * *"  # UTC 16:05 -> Beijing 00:05
-  workflow_dispatch:
+    schedule:
+        - cron: "5 16 * * *" # UTC 16:05 -> Beijing 00:05
+    workflow_dispatch:
 
 jobs:
-  run:
-    runs-on: ubuntu-latest
-    env:
-      DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
-    steps:
-      - uses: actions/checkout@v3
+    run:
+        runs-on: ubuntu-latest
+        env:
+            DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
+            DandanAppId: ${{ secrets.DANDANPLAY_APP_ID }}
+            DandanAppSecret: ${{ secrets.DANDANPLAY_APP_SECRET }}
+        steps:
+            - uses: actions/checkout@v3
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '9.0.x'
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "9.0.x"
 
-      - name: Restore & Build
-        run: dotnet build GetBangumiInfo/GetBangumiInfo.csproj --configuration Release
+            - name: Restore & Build
+              run: dotnet build GetBangumiInfo/GetBangumiInfo.csproj --configuration Release
 
-      - name: Run Bangumi Info Update
-        run: dotnet run --project GetBangumiInfo/GetBangumiInfo.csproj --configuration Release
+            - name: Run Bangumi Info Update
+              run: dotnet run --project GetBangumiInfo/GetBangumiInfo.csproj --configuration Release
