@@ -23,5 +23,5 @@ public class DandanEpisode
     [JsonIgnore]
     public DateTimeOffset? AirDate => AirDateStr == null
         ? null
-        : DateUtils.ParseBeijingTime(AirDateStr, "yyyy-MM-dd'T'HH:mm:ss");
+        : TimeUtils.ParseString(AirDateStr, "yyyy-MM-dd'T'HH:mm:ss");
 }

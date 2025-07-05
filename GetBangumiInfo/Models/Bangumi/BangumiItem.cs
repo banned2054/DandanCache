@@ -5,31 +5,31 @@ namespace GetBangumiInfo.Models.Bangumi;
 public class BangumiItem
 {
     [JsonProperty("id")]
-    public int Id { get; set; }
+    public int? Id { get; set; }
 
     [JsonProperty("url")]
-    public string Url { get; set; } = string.Empty;
+    public string? Url { get; set; }
 
     [JsonProperty("type")]
-    public int Type { get; set; }
+    public int? Type { get; set; }
 
     [JsonProperty("name")]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     [JsonProperty("name_cn")]
-    public string NameCn { get; set; } = string.Empty;
+    public string? NameCn { get; set; }
 
     [JsonProperty("air_date")]
-    public string AirDate { get; set; } = string.Empty;
+    public string? AirDate { get; set; }
 
     [JsonProperty("air_weekday")]
-    public int AirWeekday { get; set; }
+    public int? AirWeekday { get; set; }
 
     [JsonProperty("eps")]
-    public int Eps { get; set; }
+    public int? Eps { get; set; }
 
     [JsonProperty("eps_count")]
-    public int EpsCount { get; set; }
+    public int? EpsCount { get; set; }
 
     [JsonProperty("images")]
     public ImageLinks? Images { get; set; }
@@ -38,7 +38,7 @@ public class BangumiItem
     public RatingInfo? Rating { get; set; }
 
     [JsonProperty("rank")]
-    public int Rank { get; set; }
+    public int? Rank { get; set; }
 
     [JsonProperty("collection")]
     public CollectionInfo? Collection { get; set; }
