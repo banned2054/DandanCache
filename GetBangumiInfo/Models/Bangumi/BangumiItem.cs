@@ -24,9 +24,17 @@ public class BangumiItem
     public string? AirDateStr { get; set; }
 
     [JsonIgnore]
-    public DateTimeOffset? AirDate => AirDateStr == null
+    public DateTimeOffset? AirDate => string.IsNullOrWhiteSpace(AirDateStr)
         ? null
         : TimeUtils.ParseString(AirDateStr, "yyyy-MM-dd");
+
+    [JsonProperty("date")]
+    public string? DateStr { get; set; }
+
+    [JsonIgnore]
+    public DateTimeOffset? Date => string.IsNullOrWhiteSpace(DateStr)
+        ? null
+        : TimeUtils.ParseString(DateStr, "yyyy-MM-dd");
 
     [JsonProperty("air_weekday")]
     public int? AirWeekday { get; set; }

@@ -49,5 +49,19 @@ public class MyDbContext : DbContext
         // 联合主键：EpisodeVeryCold（极冷表）
         modelBuilder.Entity<EpisodeVeryCold>()
                     .HasKey(e => new { e.SubjectId, e.EpisodeNum });
+
+        modelBuilder.Entity<EpisodeVeryCold>()
+                    .Property(e => e.AddInDate)
+                    .HasConversion(
+                                   v => v.ToUniversalTime(),
+                                   v => new DateTimeOffset(v.DateTime, TimeSpan.FromHours(8))
+                                  );
+
+        modelBuilder.Entity<Mapping>()
+                    .Property(e => e.AirDate)
+                    .HasConversion(
+                                   v => v.HasValue ? v.Value.ToUniversalTime() : default,
+                                   v => new DateTimeOffset(v.DateTime, TimeSpan.FromHours(8))
+                                  );
     }
 }

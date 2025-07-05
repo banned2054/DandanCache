@@ -40,8 +40,9 @@ public class TimeUtils
         return inputTime.Date >= threeMonthsAgo && inputTime.Date <= today;
     }
 
-    public static DateTimeOffset ParseString(string timeStr, string format = "yyyy-MM-dd HH:mm:ss")
+    public static DateTimeOffset? ParseString(string timeStr, string format = "yyyy-MM-dd HH:mm:ss")
     {
+        if (string.IsNullOrEmpty(timeStr)) return null;
         var dt = DateTime.ParseExact(timeStr, format, CultureInfo.InvariantCulture, DateTimeStyles.None);
         return new DateTimeOffset(dt, TimeSpan.FromHours(8)); // 明确标记为北京时间
     }
