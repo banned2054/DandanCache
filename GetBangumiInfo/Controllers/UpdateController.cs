@@ -37,6 +37,8 @@ public class UpdateController
 
     public static async Task UpdateByDandan()
     {
+        await BangumiUtils.DownloadDumpFile();
+        await BangumiUtils.UnzipDumpFile();
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
         var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
         if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
