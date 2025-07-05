@@ -1,3 +1,4 @@
+using GetBangumiInfo.Utils;
 using Newtonsoft.Json;
 
 namespace GetBangumiInfo.Models.Bangumi;
@@ -20,7 +21,12 @@ public class BangumiItem
     public string? NameCn { get; set; }
 
     [JsonProperty("air_date")]
-    public string? AirDate { get; set; }
+    public string? AirDateStr { get; set; }
+
+    [JsonIgnore]
+    public DateTimeOffset? AirDate => AirDateStr == null
+        ? null
+        : TimeUtils.ParseString(AirDateStr, "yyyy-MM-dd");
 
     [JsonProperty("air_weekday")]
     public int? AirWeekday { get; set; }
@@ -42,4 +48,7 @@ public class BangumiItem
 
     [JsonProperty("collection")]
     public CollectionInfo? Collection { get; set; }
+
+    [JsonProperty("meta_tags")]
+    public List<string>? MetaTagList { get; set; }
 }
