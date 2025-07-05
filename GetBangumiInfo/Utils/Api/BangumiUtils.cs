@@ -1,7 +1,6 @@
 using GetBangumiInfo.Models.Bangumi;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Text.Json;
 
 namespace GetBangumiInfo.Utils.Api;
 
@@ -25,17 +24,15 @@ public class BangumiUtils
         {
             if (day.Weekday!.Id == todayWeekday || day.Weekday.Id == yesterdayWeekday)
             {
-                hotIdList.AddRange(from item in day.Items
-                                   where item.Rating != null
-                                   where !(item.Rating.Score <= 5)
-                                   select item.Id);
+                hotIdList.AddRange(from item in day.Items!
+                                   where !(item.Rating!.Score! <= 5)
+                                   select item.Id!.Value);
             }
             else
             {
-                coldIdList.AddRange(from item in day.Items
-                                    where item.Rating != null
-                                    where !(item.Rating.Score <= 5)
-                                    select item.Id);
+                coldIdList.AddRange(from item in day.Items!
+                                    where !(item.Rating!.Score! <= 5)
+                                    select item.Id!.Value);
             }
         }
 
@@ -69,7 +66,7 @@ public class BangumiUtils
         return Task.CompletedTask;
     }
 
-    public static JsonElement? GetSubjectInfo(int subjectId)
+    public static BangumiItem? GetSubjectInfo(int subjectId)
     {
         const string fileName = "subject.jsonlines";
         var          path     = Path.Combine(AppContext.BaseDirectory, fileName);
@@ -85,14 +82,7 @@ public class BangumiUtils
 
             try
             {
-                using var doc  = JsonDocument.Parse(line);
-                var       root = doc.RootElement;
-
-                if (root.TryGetProperty("id", out var idProp) && idProp.GetInt32() == subjectId)
-                {
-                    // 返回深拷贝，避免文档 Dispose 后失效
-                    return JsonDocument.Parse(root.GetRawText()).RootElement;
-                }
+                return JsonConvert.DeserializeObject<BangumiItem>(line);
             }
             catch
             {
@@ -104,7 +94,7 @@ public class BangumiUtils
     }
 
 
-    public static IEnumerable<BangumiEpisode> GetSubjectEpisodeList(int subjectId)
+    public static List<BangumiEpisode> GetSubjectEpisodeList(int subjectId)
     {
         const int    limit    = 20;
         const string fileName = "episode.jsonlines";
