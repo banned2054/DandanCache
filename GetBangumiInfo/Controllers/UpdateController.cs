@@ -47,8 +47,8 @@ public class UpdateController
             return;
         }
 
-        await BangumiUtils.DownloadDumpFile();
-        await BangumiUtils.UnzipDumpFile();
+        // await BangumiUtils.DownloadDumpFile();
+        // await BangumiUtils.UnzipDumpFile();
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
         {
@@ -59,8 +59,8 @@ public class UpdateController
         await using var db = new MyDbContext();
 
         // 🌟 1. 一次性加载 MappingList 数据，提高查找效率
-        var allMappings        = await db.MappingList.ToListAsync();
-        var existingDandanIds  = allMappings.Select(m => m.DandanId).ToHashSet();
+        var allMappings       = await db.MappingList.ToListAsync();
+        var existingDandanIds = allMappings.Select(m => m.DandanId).ToHashSet();
 
         // 🌟 2. 添加或更新 DandanId 与 BangumiId
         foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.AnimeId)))
