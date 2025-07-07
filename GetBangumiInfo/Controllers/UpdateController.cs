@@ -12,10 +12,6 @@ public class UpdateController
 
     public static async Task UpdateBangumi()
     {
-        // ① 准备离线数据
-        await BangumiUtils.DownloadDumpFile();
-        await BangumiUtils.UnzipDumpFile();
-
         // 初始化数据库
         await using var db = new MyDbContext();
 
@@ -47,8 +43,6 @@ public class UpdateController
             return;
         }
 
-        await BangumiUtils.DownloadDumpFile();
-        await BangumiUtils.UnzipDumpFile();
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
         {
