@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using GetBangumiInfo.Models.Bangumi;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
