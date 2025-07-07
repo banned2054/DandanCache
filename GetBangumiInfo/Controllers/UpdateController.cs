@@ -47,8 +47,8 @@ public class UpdateController
             return;
         }
 
-        // await BangumiUtils.DownloadDumpFile();
-        // await BangumiUtils.UnzipDumpFile();
+        await BangumiUtils.DownloadDumpFile();
+        await BangumiUtils.UnzipDumpFile();
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
         {
