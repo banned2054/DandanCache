@@ -11,6 +11,16 @@ public class DandanPlayUtils
     {
         var appId     = Environment.GetEnvironmentVariable("DandanAppId");
         var appSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
+        if (string.IsNullOrWhiteSpace(appId))
+        {
+            throw new Exception("App Id is empty");
+        }
+
+        if (string.IsNullOrWhiteSpace(appSecret))
+        {
+            throw new Exception("App Secret is empty");
+        }
+
         return new Dictionary<string, string>
         {
             { "accept", "application/json" },
