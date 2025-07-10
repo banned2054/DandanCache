@@ -93,8 +93,8 @@ public class UpdateController
                 await AddBatch(db);
             }
         }
-
-        await db.SaveChangesAsync();
+        
+        await SaveChangesWithRetryAsync(db);
         _counter = 0;
 
         // 🌟 3. 解析 BilibiliId
@@ -108,10 +108,10 @@ public class UpdateController
             item.BilibiliId = bilibiliId;
             await AddBatch(db);
         }
-
-        await db.SaveChangesAsync();
-        _counter = 0;
         
+        await SaveChangesWithRetryAsync(db);
+        _counter = 0;
+
         Console.WriteLine("Add time data...");
         Console.WriteLine("==================");
         // 🌟 4. 填补 AirDate 和 IsJapaneseAnime
@@ -124,7 +124,7 @@ public class UpdateController
         }
 
         // ✅ 最后统一保存
-        await db.SaveChangesAsync();
+        await SaveChangesWithRetryAsync(db);
     }
 
     private static async Task AddBatch(DbContext db)
@@ -132,8 +132,38 @@ public class UpdateController
         _counter++;
         if (_counter == MaxDataBaseBatchSize)
         {
-            await db.SaveChangesAsync();
+            await SaveChangesWithRetryAsync(db);
             _counter = 0;
         }
+    }
+
+    private static async Task SaveChangesWithRetryAsync(DbContext db, int maxRetries = 3, int delayMs = 1000)
+    {
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
+        {
+            try
+            {
+                await db.SaveChangesAsync();
+                return;
+            }
+            catch (Exception ex) when (IsTransient(ex))
+            {
+                Console.WriteLine($"[Attempt {attempt}] SaveChangesAsync failed: {ex.Message}");
+
+                if (attempt == maxRetries)
+                {
+                    Console.WriteLine("Reached max retries. Rethrowing.");
+                    throw;
+                }
+
+                await Task.Delay(delayMs);
+            }
+        }
+    }
+
+    private static bool IsTransient(Exception ex)
+    {
+        return ex is DbUpdateException { InnerException: Npgsql.NpgsqlException npgsqlEx } &&
+               (npgsqlEx.Message.Contains("Timeout") || npgsqlEx.Message.Contains("Exception while reading"));
     }
 }

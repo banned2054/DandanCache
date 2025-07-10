@@ -33,7 +33,11 @@ public class MyDbContext : DbContext
             throw new Exception("Database Connect Setting Not Found.");
         }
 
-        optionsBuilder.UseNpgsql(connectSetting);
+        optionsBuilder.UseNpgsql(connectSetting, opt =>
+        {
+            opt.CommandTimeout(120);
+            opt.EnableRetryOnFailure(3); // 最多重试3次
+        });
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
