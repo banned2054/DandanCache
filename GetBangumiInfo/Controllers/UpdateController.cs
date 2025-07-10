@@ -8,7 +8,10 @@ namespace GetBangumiInfo.Controllers;
 
 public class UpdateController
 {
-    public static readonly Regex BangumiRegex = new(@"subject/(?<id>\d+)");
+    public static readonly Regex BangumiRegex         = new(@"subject/(?<id>\d+)");
+    private const          int   MaxDataBaseBatchSize = 5;
+
+    private static int _counter;
 
     public static async Task UpdateBangumi()
     {
@@ -56,6 +59,9 @@ public class UpdateController
         var allMappings       = await db.MappingList.ToListAsync();
         var existingDandanIds = allMappings.Select(m => m.DandanId).ToHashSet();
 
+
+        Console.WriteLine("Add dandan data...");
+        Console.WriteLine("==================");
         // 🌟 2. 添加或更新 DandanId 与 BangumiId
         foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.AnimeId)))
         {
@@ -79,30 +85,55 @@ public class UpdateController
                 };
                 db.MappingList.Add(nowItem);
                 allMappings.Add(nowItem); // 保持本地缓存一致
+                await AddBatch(db);
             }
             else
             {
                 nowItem.DandanId = shortInfo.AnimeId;
+                await AddBatch(db);
             }
         }
 
+        await db.SaveChangesAsync();
+        _counter = 0;
+
         // 🌟 3. 解析 BilibiliId
+
+        Console.WriteLine("Add bilibili data...");
+        Console.WriteLine("==================");
         foreach (var item in allMappings.Where(e => e.BilibiliId == -1))
         {
             var bilibiliId = await Bangumi2BilibiliUtils.Parser(item.BangumiId);
             if (bilibiliId == -1) continue;
             item.BilibiliId = bilibiliId;
+            await AddBatch(db);
         }
 
+        await db.SaveChangesAsync();
+        _counter = 0;
+        
+        Console.WriteLine("Add time data...");
+        Console.WriteLine("==================");
         // 🌟 4. 填补 AirDate 和 IsJapaneseAnime
         foreach (var item in allMappings.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
         {
             var info = BangumiUtils.GetSubjectInfo(item.BangumiId);
             item.AirDate         = info?.Date!;
             item.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
+            await AddBatch(db);
         }
 
         // ✅ 最后统一保存
         await db.SaveChangesAsync();
+    }
+
+    private static async Task AddBatch(DbContext db)
+    {
+        _counter++;
+        if (_counter == MaxDataBaseBatchSize)
+        {
+            await db.SaveChangesAsync();
+            _counter = 0;
+        }
     }
 }
