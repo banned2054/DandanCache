@@ -4,13 +4,16 @@ namespace GetBangumiInfo.Utils;
 
 public class StringUtils
 {
+    public static bool IsPropertyNull(string? line)
+    {
+        if (string.IsNullOrWhiteSpace(line)) return true;
+        if (line.Contains("\"name\":\"\",\"name_cn\":\"\"")) return true;
+        return line.Contains("\"airdate\":\"\"");
+    }
+
     public static bool QuickFilter(string line, int subjectId)
     {
-        if (string.IsNullOrWhiteSpace(line)) return false;
-
-        // 快速字符串筛选（避免 JSON 反序列化）
-        if (line.Contains("\"name\":\"\",\"name_cn\":\"\"")) return false;
-        if (line.Contains("\"airdate\":\"\"")) return false;
+        if (IsPropertyNull(line)) return false;
         return line.Contains($"\"subject_id\":{subjectId},");
     }
 
