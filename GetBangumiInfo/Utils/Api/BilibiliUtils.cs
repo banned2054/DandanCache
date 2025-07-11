@@ -1,3 +1,4 @@
+using GetBangumiInfo.Models.Bilibili;
 using GetBangumiInfo.Models.Response.Bilibili;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -58,15 +59,15 @@ public class BilibiliUtils
         return seasonId;
     }
 
-    public static async Task GetCidListBySeasonIdAsync(long seasonId)
+    public static async Task<List<BilibiliEpisode>?> GetEpisodeListBySeasonIdAsync(long seasonId)
     {
         var response = await Fetch<string>($"pgc/view/web/ep/list?season_id={seasonId}");
         Console.WriteLine(response);
         var result = JsonConvert.DeserializeObject<BilibiliCidListResponse>(response);
-        if (result?.Result?.Episodes == null || result.Result.Episodes.Count == 0) return;
-        foreach (var episode in result.Result.Episodes.OrderBy(e => e.PubTimeUnix))
-        {
-            Console.WriteLine($"{episode.PubDate} {episode.PubTimeUnix}");
-        }
+        if (result?.Result?.Episodes == null || result.Result.Episodes.Count == 0) return default;
+        return result.Result.Episodes
+                     .OrderBy(e => e.PubTimeUnix)
+                     .Where(e => string.IsNullOrWhiteSpace(e.NumberStr) || decimal.TryParse(e.NumberStr, out _))
+                     .ToList();
     }
 }
