@@ -12,7 +12,7 @@ public class DandanEpisode
     public int EpisodeId { get; set; }
 
     [JsonProperty("episodeTitle")]
-    public string? EpisodeTitle { get; set; }
+    public string? Title { get; set; }
 
     [JsonProperty("episodeNumber")]
     public string? EpisodeNumber { get; set; }

@@ -5,13 +5,10 @@ namespace GetBangumiInfo.Models.Dandan;
 public class ShortAnimeInfo
 {
     [JsonProperty("animeId")]
-    public int AnimeId { get; set; }
-
-    [JsonProperty("bangumiId")]
-    public string BangumiId { get; set; } = string.Empty;
+    public int Id { get; set; }
 
     [JsonProperty("animeTitle")]
-    public string AnimeTitle { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
 
     [JsonProperty("imageUrl")]
     public string ImageUrl { get; set; } = string.Empty;

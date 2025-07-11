@@ -11,9 +11,6 @@ public class Episode
     [Column("episode")]
     public float EpisodeNum { get; set; }
 
-    [Column("isBilibili")]
-    public bool IsBilibili { get; set; }
-
     [Column("Id")]
     public int Id { get; set; }
 }

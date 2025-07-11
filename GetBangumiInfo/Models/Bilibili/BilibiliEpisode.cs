@@ -16,4 +16,15 @@ public class BilibiliEpisode
 
     [JsonProperty("link")]
     public string? Link { get; set; }
+
+    [JsonProperty("show_title")]
+    public string? Title { get; set; }
+
+    [JsonProperty("title")]
+    public string? NumberStr { get; set; }
+
+    [JsonIgnore]
+    public int? Number => string.IsNullOrWhiteSpace(NumberStr) || !int.TryParse(NumberStr, out _)
+        ? null
+        : int.Parse(NumberStr);
 }
