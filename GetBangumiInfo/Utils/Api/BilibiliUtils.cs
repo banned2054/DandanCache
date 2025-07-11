@@ -21,7 +21,7 @@ public class BilibiliUtils
         return response;
     }
 
-    public static async Task<int> GetSeasonIdByMediaId(string mediaId)
+    public static async Task<int> GetSeasonIdByMediaId(int mediaId)
     {
         var header = new Dictionary<string, string>
         {
