@@ -88,14 +88,6 @@ public class UpdateController
     {
         Console.WriteLine("Updating dandan...");
         Console.WriteLine("==================");
-        var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
-        var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
-
-        if (string.IsNullOrEmpty(dandanAppId) || string.IsNullOrEmpty(dandanAppSecret))
-        {
-            Console.WriteLine("Missing Dandan App ID or Secret");
-            return;
-        }
 
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
