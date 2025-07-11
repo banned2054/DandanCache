@@ -7,10 +7,10 @@ namespace GetBangumiInfo.Models.Database;
 public class Mapping
 {
     [Key]
-    [Column("bangumiSubjectId")]
+    [Column("bangumiId")]
     public int BangumiId { get; set; }
 
-    [Column("bilibiliSeasonId")]
+    [Column("bilibiliId")]
     public int BilibiliId { get; set; }
 
     [Column("dandanId")]
