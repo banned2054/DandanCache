@@ -52,7 +52,7 @@ public class BangumiUtils
         return Task.CompletedTask;
     }
 
-    public static BangumiItem? GetSubjectInfo(int subjectId)
+    public static async Task<BangumiItem?> GetSubjectInfo(int subjectId)
     {
         const string fileName = "subject.jsonlines";
         var          path     = Path.Combine(AppContext.BaseDirectory, fileName);
@@ -61,7 +61,7 @@ public class BangumiUtils
 
         while (!reader.EndOfStream)
         {
-            var line = reader.ReadLine();
+            var line = await reader.ReadLineAsync();
             if (line == null) continue;
 
             if (!line.Contains($"\"id\":{subjectId},")) continue;
@@ -80,7 +80,7 @@ public class BangumiUtils
     }
 
 
-    public static List<BangumiEpisode> GetSubjectEpisodeList(int subjectId)
+    public static async Task<List<BangumiEpisode>> GetSubjectEpisodeList(int subjectId)
     {
         const int    limit    = 20;
         const string fileName = "episode.jsonlines";
@@ -92,7 +92,7 @@ public class BangumiUtils
 
         while (!reader.EndOfStream)
         {
-            var line = reader.ReadLine();
+            var line = await reader.ReadLineAsync();
             if (line == null) continue;
 
             if (!StringUtils.QuickFilter(line, subjectId)) continue;
