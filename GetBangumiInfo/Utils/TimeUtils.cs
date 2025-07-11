@@ -40,6 +40,16 @@ public class TimeUtils
         return inputTime.Date >= threeMonthsAgo && inputTime.Date <= today;
     }
 
+    /// <summary>
+    /// 判断一个时间是否在北京时间的最近三个月内
+    /// </summary>
+    public static bool IsWithinThreeDays(DateTimeOffset inputTime)
+    {
+        var today          = GetNow().Date;
+        var threeMonthsAgo = today.AddDays(-3);
+        return inputTime.Date >= threeMonthsAgo && inputTime.Date <= today;
+    }
+
     public static DateTimeOffset? ParseString(string timeStr, string format = "yyyy-MM-dd HH:mm:ss")
     {
         if (string.IsNullOrEmpty(timeStr)) return null;
