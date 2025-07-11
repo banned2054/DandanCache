@@ -1,6 +1,5 @@
 using GetBangumiInfo.Controllers;
 using GetBangumiInfo.Utils.Api;
-using Google.Protobuf.WellKnownTypes;
 
 namespace GetBangumiInfo;
 
