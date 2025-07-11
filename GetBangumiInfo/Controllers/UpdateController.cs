@@ -16,16 +16,22 @@ public class UpdateController
 
     public static async Task UpdateBangumi()
     {
+        Console.WriteLine("Updating danmaku...");
+        Console.WriteLine("==================");
         // 初始化数据库
         await using var db = new MyDbContext();
         await db.Database.ExecuteSqlRawAsync("delete from episodeList");
         await db.Database.ExecuteSqlRawAsync("delete from episodeListCold");
 
+        Console.WriteLine("Get bangumi calender...");
+        Console.WriteLine("==================");
         var bangumiList = await BangumiUtils.GetCalendar();
         var mappingList = db.MappingList.ToList();
         _counter = 0;
-        foreach (var bangumiId in bangumiList.Select(e => e.Id!.Value))
+        foreach (var (bangumiId, name)in bangumiList
+                    .Select(e => (e.Id!.Value, e.NameCn == null ? e.NameCn : e.Name)))
         {
+            Console.WriteLine($"\nUpdate {name}");
             var mapping = mappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
             if (mapping == default) continue;
             if (!mapping.IsJapaneseAnime!.Value) continue;
@@ -37,6 +43,7 @@ public class UpdateController
                 var mediaId = await BilibiliUtils.GetSeasonIdByMediaId(bilibiliId);
                 if (mediaId != -1)
                 {
+                    Console.WriteLine("Bilibili data find");
                     var bilibiliEpisodeList = await BilibiliUtils.GetEpisodeListBySeasonIdAsync(mediaId);
                     bilibiliHotList = bilibiliEpisodeList!
                                      .Where(e => TimeUtils.IsWithinThreeDays(e.PubDate))
@@ -44,6 +51,7 @@ public class UpdateController
                 }
             }
 
+            Console.WriteLine("Get dandan full info");
             var dandanId = mapping.DandanId;
             var info     = await DandanPlayUtils.GetFullAnimeInfo(dandanId);
             if (info == null) continue;
@@ -53,6 +61,7 @@ public class UpdateController
                                   .OrderBy(e => e.AirDate)
                                   .ToList();
 
+            Console.WriteLine("Download danmaku");
             for (var i = 0; i < episodeList.Count; i++)
             {
                 var episode = episodeList[i];
