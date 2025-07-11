@@ -1,5 +1,6 @@
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Database;
+using GetBangumiInfo.Utils;
 using GetBangumiInfo.Utils.Api;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
@@ -17,19 +18,70 @@ public class UpdateController
     {
         // 初始化数据库
         await using var db = new MyDbContext();
-        //// ② 取本周番剧 SubjectId 列表
-        //var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
+        await db.Database.ExecuteSqlRawAsync("delete from episodeList");
+        await db.Database.ExecuteSqlRawAsync("delete from episodeListCold");
 
-        //await using var tx = await db.Database.BeginTransactionAsync();
+        var bangumiList = await BangumiUtils.GetCalendar();
+        var mappingList = db.MappingList.ToList();
+        _counter = 0;
+        foreach (var bangumiId in bangumiList.Select(e => e.Id!.Value))
+        {
+            var mapping = mappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
+            if (mapping == default) continue;
+            if (!mapping.IsJapaneseAnime!.Value) continue;
 
-        //// ---------- 1. 读取旧表 ----------
-        //var oldHotList  = await db.EpisodeList.AsNoTracking().ToListAsync();
-        //var oldColdList = await db.EpisodeListCold.AsNoTracking().ToListAsync();
+            var        bilibiliId      = mapping.BilibiliId;
+            List<int>? bilibiliHotList = null;
+            if (bilibiliId != -1)
+            {
+                var mediaId = await BilibiliUtils.GetSeasonIdByMediaId(bilibiliId);
+                if (mediaId != -1)
+                {
+                    var bilibiliEpisodeList = await BilibiliUtils.GetEpisodeListBySeasonIdAsync(mediaId);
+                    bilibiliHotList = bilibiliEpisodeList!
+                                     .Where(e => TimeUtils.IsWithinThreeDays(e.PubDate))
+                                     .Select(e => e.Number!.Value).ToList();
+                }
+            }
 
-        //var oldHotIds  = oldHotList.Select(e => e.Id).ToHashSet();
-        //var oldColdIds = oldColdList.Select(e => e.Id).ToHashSet();
+            var dandanId = mapping.DandanId;
+            var info     = await DandanPlayUtils.GetFullAnimeInfo(dandanId);
+            if (info == null) continue;
 
-        //await tx.CommitAsync();
+            var episodeList = info.EpisodeList!
+                                  .Where(e => int.TryParse(e.EpisodeNumber, out _))
+                                  .OrderBy(e => e.AirDate)
+                                  .ToList();
+
+            for (var i = 0; i < episodeList.Count; i++)
+            {
+                var episode = episodeList[i];
+
+                // bilibili中是最新，或者弹弹play中是最新
+                if (bilibiliHotList!.Contains(i) || TimeUtils.IsWithinThreeDays(episode.AirDate!.Value))
+                {
+                    if (await db.EpisodeList.AnyAsync(e => e.Id == episode.EpisodeId)) continue;
+                    await db.EpisodeList.AddAsync(new Episode
+                    {
+                        Id         = episode.EpisodeId,
+                        EpisodeNum = i,
+                        SubjectId  = bangumiId
+                    });
+                    await AddBatch(db);
+                    continue;
+                }
+
+                if (await db.EpisodeListCold.AnyAsync(e => e.Id == episode.EpisodeId)) continue;
+                if (!TimeUtils.IsWithinThreeMonths(episode.AirDate.Value)) continue;
+                await db.EpisodeListCold.AddAsync(new EpisodeCold
+                {
+                    Id         = episode.EpisodeId,
+                    EpisodeNum = i,
+                    SubjectId  = bangumiId
+                });
+                await AddBatch(db);
+            }
+        }
     }
 
     public static async Task UpdateByDandan()
@@ -62,9 +114,9 @@ public class UpdateController
         Console.WriteLine("Add dandan data...");
         Console.WriteLine("==================");
         // 🌟 2. 添加或更新 DandanId 与 BangumiId
-        foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.AnimeId)))
+        foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.Id)))
         {
-            var fullInfo = await DandanPlayUtils.GetFullAnimeInfo(shortInfo.AnimeId);
+            var fullInfo = await DandanPlayUtils.GetFullAnimeInfo(shortInfo.Id);
             if (fullInfo == null) continue;
 
             var match = BangumiRegex.Match(fullInfo.BangumiUrl);
@@ -79,7 +131,7 @@ public class UpdateController
                 nowItem = new Mapping
                 {
                     BangumiId  = bangumiId,
-                    DandanId   = shortInfo.AnimeId,
+                    DandanId   = shortInfo.Id,
                     BilibiliId = -1
                 };
                 db.MappingList.Add(nowItem);
@@ -88,7 +140,7 @@ public class UpdateController
             }
             else
             {
-                nowItem.DandanId = shortInfo.AnimeId;
+                nowItem.DandanId = shortInfo.Id;
                 await AddBatch(db);
             }
         }
