@@ -17,7 +17,6 @@ public class UpdateController
     {
         // 初始化数据库
         await using var db = new MyDbContext();
-
         //// ② 取本周番剧 SubjectId 列表
         //var (hotSubjectIds, coldSubjectIds) = await BangumiUtils.GetCalendar();
 
@@ -93,7 +92,7 @@ public class UpdateController
                 await AddBatch(db);
             }
         }
-        
+
         await SaveChangesWithRetryAsync(db);
         _counter = 0;
 
@@ -108,7 +107,7 @@ public class UpdateController
             item.BilibiliId = bilibiliId;
             await AddBatch(db);
         }
-        
+
         await SaveChangesWithRetryAsync(db);
         _counter = 0;
 
@@ -117,7 +116,7 @@ public class UpdateController
         // 🌟 4. 填补 AirDate 和 IsJapaneseAnime
         foreach (var item in allMappings.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
         {
-            var info = BangumiUtils.GetSubjectInfo(item.BangumiId);
+            var info = await BangumiUtils.GetSubjectInfo(item.BangumiId);
             item.AirDate         = info?.Date!;
             item.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
             await AddBatch(db);
