@@ -7,7 +7,7 @@ namespace GetBangumiInfo.Models.Database;
 public class EpisodeCold
 {
     [Key]
-    [Column("Id")]
+    [Column("id")]
     public int Id { get; set; }
 
     [Column("subjectId")]
