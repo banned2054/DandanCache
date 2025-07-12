@@ -1,3 +1,4 @@
+using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
 using GetBangumiInfo.Database;
@@ -85,14 +86,12 @@ internal class Program
     {
         var xmlBytes = danmaku.ToXml();
 
-        using var stream = new MemoryStream(xmlBytes);
-
         var request = new PutObjectRequest
         {
             BucketName  = R2BucketName,
             Key         = objectKey,
-            InputStream = stream,
-            ContentType = "application/xml"
+            ContentType = "application/xml",
+            ContentBody = Encoding.UTF8.GetString(xmlBytes),
         };
 
         var response = await _client!.PutObjectAsync(request);
