@@ -19,29 +19,10 @@ public class UpdateController
         Console.WriteLine("Updating danmaku...");
         Console.WriteLine("==================");
         // 初始化数据库
-        await using var db    = new MyDbContext();
-        var             count = db.EpisodeList.Count();
-        if (count > 0)
-        {
-            Console.WriteLine($"Deleting {count} rows...");
-            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeList\" WHERE true");
-        }
-        else
-        {
-            Console.WriteLine("Table episodeList is null");
-        }
+        await using var db = new MyDbContext();
 
-        count = db.EpisodeListCold.Count();
-        if (count > 0)
-        {
-            Console.WriteLine($"Deleting {count} rows...");
-            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeListCold\" WHERE true");
-        }
-        else
-        {
-            Console.WriteLine("Table episodeListCold is null");
-        }
-
+        var tempHotList  = new List<Episode>();
+        var tempColdList = new List<EpisodeCold>();
         Console.WriteLine("Get bangumi calender...");
         Console.WriteLine("==================");
         var bangumiList = await BangumiUtils.GetCalendar();
@@ -90,29 +71,72 @@ public class UpdateController
                 if ((bilibiliHotList != null && bilibiliHotList!.Contains(i + 1)) ||
                     TimeUtils.IsWithinThreeDays(episode.AirDate!.Value))
                 {
-                    if (db.EpisodeList.Any(e => e.Id == episode.EpisodeId)) continue;
-                    db.EpisodeList.Add(new Episode
+                    if (tempHotList.Any(e => e.Id == episode.EpisodeId)) continue;
+                    tempHotList.Add(new Episode
                     {
                         Id         = episode.EpisodeId,
                         EpisodeNum = i + 1,
                         SubjectId  = bangumiId
                     });
-                    Console.WriteLine($"\tNew Episode:{episode.Title}");
-                    await AddBatch(db);
                     continue;
                 }
 
-                if (db.EpisodeListCold.Any(e => e.Id == episode.EpisodeId)) continue;
+                if (tempColdList.Any(e => e.Id == episode.EpisodeId)) continue;
                 if (!TimeUtils.IsWithinThreeMonths(episode.AirDate!.Value)) continue;
-                db.EpisodeListCold.Add(new EpisodeCold
+                tempColdList.Add(new EpisodeCold
                 {
                     Id         = episode.EpisodeId,
                     EpisodeNum = i + 1,
                     SubjectId  = bangumiId
                 });
-                Console.WriteLine($"\tNew Episode:{episode.Title}");
-                await AddBatch(db);
             }
+        }
+
+        var dbHotList  = db.EpisodeList.ToList();
+        var dbColdList = db.EpisodeListCold.ToList();
+
+        var dbHotDict    = dbHotList.ToDictionary(e => e.Id);
+        var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
+        var tempHotDict  = tempHotList.ToDictionary(e => e.Id);
+        var tempColdDict = tempColdList.ToDictionary(e => e.Id);
+
+        // --- 热表处理 ---
+
+        // 删除 db 有但 temp 没有的
+        Console.WriteLine("Remove not hot episode...");
+        foreach (var dbItem in dbHotList.Where(dbItem => !tempHotDict.ContainsKey(dbItem.Id)))
+        {
+            db.EpisodeList.Remove(dbItem);
+            await AddBatch(db);
+        }
+
+        // 添加 temp 有但 db 没有的
+        Console.WriteLine("Add new hot episode...");
+        foreach (var tempItem in tempHotList.Where(tempItem => !dbHotDict.ContainsKey(tempItem.Id)))
+        {
+            await db.EpisodeList.AddAsync(tempItem);
+            await AddBatch(db);
+        }
+        
+        Console.WriteLine("Remove not cold episode...");
+        foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
+        {
+            db.EpisodeListCold.Remove(dbItem);
+            await AddBatch(db);
+        }
+        
+        Console.WriteLine("Add new cold episode...");
+        foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
+        {
+            await db.EpisodeListCold.AddAsync(tempItem);
+            await AddBatch(db);
+        }
+
+        // 最后一次保存
+        if (_counter > 0)
+        {
+            await SaveChangesWithRetryAsync(db);
+            _counter = 0;
         }
 
         await db.DisposeAsync();
