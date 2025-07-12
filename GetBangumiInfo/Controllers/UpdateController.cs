@@ -106,9 +106,6 @@ public class UpdateController
 
     public static async Task UpdateByDandan()
     {
-        Console.WriteLine("Updating dandan...");
-        Console.WriteLine("==================");
-
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
         {
@@ -122,9 +119,6 @@ public class UpdateController
         var allMappings       = await db.MappingList.ToListAsync();
         var existingDandanIds = allMappings.Select(m => m.DandanId).ToHashSet();
 
-
-        Console.WriteLine("Add dandan data...");
-        Console.WriteLine("==================");
         // 🌟 2. 添加或更新 DandanId 与 BangumiId
         foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.Id)))
         {
@@ -161,9 +155,6 @@ public class UpdateController
         _counter = 0;
 
         // 🌟 3. 解析 BilibiliId
-
-        Console.WriteLine("Add bilibili data...");
-        Console.WriteLine("==================");
         foreach (var item in allMappings.Where(e => e.BilibiliId == -1))
         {
             var bilibiliId = await Bangumi2BilibiliUtils.Parser(item.BangumiId);
@@ -175,8 +166,6 @@ public class UpdateController
         await SaveChangesWithRetryAsync(db);
         _counter = 0;
 
-        Console.WriteLine("Add time data...");
-        Console.WriteLine("==================");
         // 🌟 4. 填补 AirDate 和 IsJapaneseAnime
         foreach (var item in allMappings.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
         {
