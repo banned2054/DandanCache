@@ -1,4 +1,5 @@
 using GetBangumiInfo.Controllers;
+using GetBangumiInfo.Database;
 using GetBangumiInfo.Utils.Api;
 
 namespace GetBangumiInfo;
@@ -34,6 +35,7 @@ internal class Program
             await BangumiUtils.UnzipDumpFile();
         }
 
+        var db = new MyDbContext();
         await UpdateController.UpdateByDandan();
         await UpdateController.UpdateBangumi();
     }

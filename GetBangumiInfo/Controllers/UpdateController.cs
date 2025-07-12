@@ -14,12 +14,10 @@ public class UpdateController
 
     private static int _counter;
 
-    public static async Task UpdateBangumi()
+    public static async Task UpdateBangumi(MyDbContext db)
     {
         Console.WriteLine("Updating danmaku...");
         Console.WriteLine("==================");
-        // 初始化数据库
-        await using var db = new MyDbContext();
 
         var tempHotList  = new List<Episode>();
         var tempColdList = new List<EpisodeCold>();
@@ -117,14 +115,14 @@ public class UpdateController
             await db.EpisodeList.AddAsync(tempItem);
             await AddBatch(db);
         }
-        
+
         Console.WriteLine("Remove not cold episode...");
         foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
         {
             db.EpisodeListCold.Remove(dbItem);
             await AddBatch(db);
         }
-        
+
         Console.WriteLine("Add new cold episode...");
         foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
         {
@@ -138,11 +136,9 @@ public class UpdateController
             await SaveChangesWithRetryAsync(db);
             _counter = 0;
         }
-
-        await db.DisposeAsync();
     }
 
-    public static async Task UpdateByDandan()
+    public static async Task UpdateByDandan(MyDbContext db)
     {
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
@@ -150,8 +146,6 @@ public class UpdateController
             Console.WriteLine("Recent dandan data is null");
             return;
         }
-
-        await using var db = new MyDbContext();
 
         // 🌟 1. 一次性加载 MappingList 数据，提高查找效率
         var allMappings       = await db.MappingList.ToListAsync();
@@ -215,8 +209,6 @@ public class UpdateController
 
         // ✅ 最后统一保存
         await SaveChangesWithRetryAsync(db);
-
-        await db.DisposeAsync();
     }
 
     private static async Task AddBatch(DbContext db)
