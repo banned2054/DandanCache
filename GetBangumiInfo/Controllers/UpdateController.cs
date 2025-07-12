@@ -19,10 +19,20 @@ public class UpdateController
         Console.WriteLine("Updating danmaku...");
         Console.WriteLine("==================");
         // 初始化数据库
-        await using var db  = new MyDbContext();
-        using var       cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"episodeList\", \"episodeListCold\"", cts.Token);
+        await using var db    = new MyDbContext();
+        var             count = await db.EpisodeList.CountAsync();
+        if (count > 0)
+        {
+            Console.WriteLine($"Deleting {count} rows...");
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeList\" WHERE true");
+        }
 
+        count = await db.EpisodeListCold.CountAsync();
+        if (count > 0)
+        {
+            Console.WriteLine($"Deleting {count} rows...");
+            await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeListCold\" WHERE true");
+        }
 
         Console.WriteLine("Get bangumi calender...");
         Console.WriteLine("==================");
