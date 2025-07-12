@@ -1,6 +1,7 @@
 using System.Text;
 using Amazon.S3;
 using Amazon.S3.Model;
+using Amazon.S3.Transfer;
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Danmaku;
 using GetBangumiInfo.Utils.Api;
@@ -84,20 +85,21 @@ internal class Program
 
     public static async Task UploadDanmakuXmlAsync(ScraperDanmaku danmaku, string objectKey)
     {
-        var xmlBytes = danmaku.ToXml();
+        var       xmlBytes = danmaku.ToXml();
+        using var stream   = new MemoryStream(xmlBytes);
 
-        var request = new PutObjectRequest
+        var fileTransferUtility = new TransferUtility(_client);
+
+        var request = new TransferUtilityUploadRequest
         {
+            InputStream = stream,
             BucketName  = R2BucketName,
             Key         = objectKey,
-            ContentType = "application/xml",
-            ContentBody = Encoding.UTF8.GetString(xmlBytes),
+            ContentType = "application/xml"
         };
 
-        var response = await _client!.PutObjectAsync(request);
+        await fileTransferUtility.UploadAsync(request);
 
-        Console.WriteLine(response.HttpStatusCode == System.Net.HttpStatusCode.OK
-                              ? $"✅ 成功上传至 R2：{objectKey}"
-                              : $"❌ 上传失败 ({response.HttpStatusCode}): {objectKey}");
+        Console.WriteLine($"✅ 成功上传至 R2：{objectKey}");
     }
 }
