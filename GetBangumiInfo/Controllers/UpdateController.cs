@@ -102,6 +102,8 @@ public class UpdateController
                 await AddBatch(db);
             }
         }
+
+        await db.DisposeAsync();
     }
 
     public static async Task UpdateByDandan()
@@ -177,6 +179,8 @@ public class UpdateController
 
         // ✅ 最后统一保存
         await SaveChangesWithRetryAsync(db);
+
+        await db.DisposeAsync();
     }
 
     private static async Task AddBatch(DbContext db)
