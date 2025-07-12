@@ -7,7 +7,7 @@ on:
     workflow_dispatch:
 
 jobs:
-    run:
+    update-bangumi-info:
         runs-on: ubuntu-latest
         env:
             DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
@@ -26,3 +26,28 @@ jobs:
 
             - name: Run Bangumi Info Update
               run: dotnet run --project GetBangumiInfo/GetBangumiInfo.csproj --configuration Release
+    wait-between-jobs:
+        needs: update-bangumi-info
+        runs-on: ubuntu-latest
+        steps:
+            - name: Wait 30 seconds
+              run: sleep 30
+    get-cold-danmaku:
+        runs-on: ubuntu-latest
+        env:
+            R2AccessKeyId: ${{ secrets.R2_ACCESS_KEY_ID }}
+            R2SecretAccessKey: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+            R2Endpoint: ${{ secrets.R2_END_POINT }}
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "9.0.x"
+
+            - name: Restore & Build
+              run: dotnet build DanmakuUpdate/DanmakuUpdate.csproj --configuration Release
+
+            - name: Run Bangumi Info Update
+              run: dotnet run --project DanmakuUpdate/DanmakuUpdate.csproj --configuration Release -- cold
