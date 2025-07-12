@@ -26,12 +26,20 @@ public class UpdateController
             Console.WriteLine($"Deleting {count} rows...");
             await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeList\" WHERE true");
         }
+        else
+        {
+            Console.WriteLine("Table episodeList is null");
+        }
 
         count = await db.EpisodeListCold.CountAsync();
         if (count > 0)
         {
             Console.WriteLine($"Deleting {count} rows...");
             await db.Database.ExecuteSqlRawAsync("DELETE FROM \"episodeListCold\" WHERE true");
+        }
+        else
+        {
+            Console.WriteLine("Table episodeListCold is null");
         }
 
         Console.WriteLine("Get bangumi calender...");
@@ -69,36 +77,40 @@ public class UpdateController
 
             var episodeList = info.EpisodeList!
                                   .Where(e => int.TryParse(e.EpisodeNumber, out _))
+                                  .Where(e => e.AirDate != null)
                                   .OrderBy(e => e.AirDate)
                                   .ToList();
 
-            Console.WriteLine("Download danmaku");
+            Console.WriteLine($"Download danmaku, episode count: {episodeList.Count}");
             for (var i = 0; i < episodeList.Count; i++)
             {
                 var episode = episodeList[i];
 
                 // bilibili中是最新，或者弹弹play中是最新
-                if (bilibiliHotList!.Contains(i) || TimeUtils.IsWithinThreeDays(episode.AirDate!.Value))
+                if ((bilibiliHotList != null && bilibiliHotList!.Contains(i + 1)) ||
+                    TimeUtils.IsWithinThreeDays(episode.AirDate!.Value))
                 {
-                    if (await db.EpisodeList.AnyAsync(e => e.Id == episode.EpisodeId)) continue;
-                    await db.EpisodeList.AddAsync(new Episode
+                    if (db.EpisodeList.Any(e => e.Id == episode.EpisodeId)) continue;
+                    db.EpisodeList.Add(new Episode
                     {
                         Id         = episode.EpisodeId,
-                        EpisodeNum = i,
+                        EpisodeNum = i + 1,
                         SubjectId  = bangumiId
                     });
+                    Console.WriteLine($"\tNew Episode:{episode.Title}");
                     await AddBatch(db);
                     continue;
                 }
 
-                if (await db.EpisodeListCold.AnyAsync(e => e.Id == episode.EpisodeId)) continue;
-                if (!TimeUtils.IsWithinThreeMonths(episode.AirDate.Value)) continue;
-                await db.EpisodeListCold.AddAsync(new EpisodeCold
+                if (db.EpisodeListCold.Any(e => e.Id == episode.EpisodeId)) continue;
+                if (!TimeUtils.IsWithinThreeMonths(episode.AirDate!.Value)) continue;
+                db.EpisodeListCold.Add(new EpisodeCold
                 {
                     Id         = episode.EpisodeId,
-                    EpisodeNum = i,
+                    EpisodeNum = i + 1,
                     SubjectId  = bangumiId
                 });
+                Console.WriteLine($"\tNew Episode:{episode.Title}");
                 await AddBatch(db);
             }
         }
@@ -188,6 +200,7 @@ public class UpdateController
         _counter++;
         if (_counter == MaxDataBaseBatchSize)
         {
+            Console.WriteLine("Batch is max, save.");
             await SaveChangesWithRetryAsync(db);
             _counter = 0;
         }
