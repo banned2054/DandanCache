@@ -20,7 +20,7 @@ public class UpdateController
         Console.WriteLine("==================");
         // 初始化数据库
         await using var db    = new MyDbContext();
-        var             count = await db.EpisodeList.CountAsync();
+        var             count = db.EpisodeList.Count();
         if (count > 0)
         {
             Console.WriteLine($"Deleting {count} rows...");
@@ -31,7 +31,7 @@ public class UpdateController
             Console.WriteLine("Table episodeList is null");
         }
 
-        count = await db.EpisodeListCold.CountAsync();
+        count = db.EpisodeListCold.Count();
         if (count > 0)
         {
             Console.WriteLine($"Deleting {count} rows...");
