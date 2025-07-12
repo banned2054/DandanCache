@@ -19,9 +19,10 @@ public class UpdateController
         Console.WriteLine("Updating danmaku...");
         Console.WriteLine("==================");
         // 初始化数据库
-        await using var db = new MyDbContext();
-        await db.Database.ExecuteSqlRawAsync("delete from episodeList");
-        await db.Database.ExecuteSqlRawAsync("delete from episodeListCold");
+        await using var db  = new MyDbContext();
+        using var       cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        await db.Database.ExecuteSqlRawAsync("TRUNCATE TABLE \"episodeList\", \"episodeListCold\"", cts.Token);
+
 
         Console.WriteLine("Get bangumi calender...");
         Console.WriteLine("==================");
@@ -215,7 +216,7 @@ public class UpdateController
 
     private static bool IsTransient(Exception ex)
     {
-        return ex is DbUpdateException { InnerException: Npgsql.NpgsqlException npgsqlEx } &&
-               (npgsqlEx.Message.Contains("Timeout") || npgsqlEx.Message.Contains("Exception while reading"));
+        return ex is DbUpdateException { InnerException: Npgsql.NpgsqlException exception } &&
+               (exception.Message.Contains("Timeout") || exception.Message.Contains("Exception while reading"));
     }
 }
