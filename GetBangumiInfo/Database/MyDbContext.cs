@@ -30,7 +30,6 @@ public class MyDbContext : DbContext
 
         optionsBuilder.UseNpgsql(connectSetting, opt =>
         {
-            opt.CommandTimeout(120);
             opt.EnableRetryOnFailure(3); // 最多重试3次
         });
     }
