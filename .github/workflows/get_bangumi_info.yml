@@ -35,6 +35,9 @@ jobs:
     get-cold-danmaku:
         runs-on: ubuntu-latest
         env:
+            DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
+            DandanAppId: ${{ secrets.DANDANPLAY_APP_ID }}
+            DandanAppSecret: ${{ secrets.DANDANPLAY_APP_SECRET }}
             R2AccessKeyId: ${{ secrets.R2_ACCESS_KEY_ID }}
             R2SecretAccessKey: ${{ secrets.R2_SECRET_ACCESS_KEY }}
             R2Endpoint: ${{ secrets.R2_END_POINT }}
