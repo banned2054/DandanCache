@@ -24,13 +24,16 @@ public class UpdateController
         Console.WriteLine("Get bangumi calender...");
         Console.WriteLine("==================");
         var bangumiList = await BangumiUtils.GetCalendar();
+        Console.WriteLine("==================");
         var mappingList = db.MappingList.ToList();
+        Console.WriteLine("==================");
         _counter = 0;
         foreach (var (bangumiId, name)in bangumiList
                     .Select(e => (e.Id!.Value, e.NameCn == null ? e.NameCn : e.Name)))
         {
             Console.WriteLine($"\nUpdate {name}");
             var mapping = mappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
+            Console.WriteLine("!!!!!!!!!!!!!!!!");
             if (mapping == default) continue;
             if (!mapping.IsJapaneseAnime!.Value) continue;
 
