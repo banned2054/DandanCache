@@ -1,11 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
 using Amazon.S3;
-using Amazon.S3.Model;
-using Amazon.S3.Transfer;
 using GetBangumiInfo.Database;
 using GetBangumiInfo.Models.Danmaku;
 using GetBangumiInfo.Utils.Api;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace DanmakuUpdate;
 
@@ -18,8 +16,6 @@ internal class Program
     private static readonly string? R2SecretAccessKey = Environment.GetEnvironmentVariable("R2SecretAccessKey");
     private static readonly string? R2Endpoint        = Environment.GetEnvironmentVariable("R2Endpoint");
     public static           string? R2BucketName      = "danmaku";
-
-    private static AmazonS3Client? _client;
 
     private static async Task Main(string[] args)
     {
@@ -52,15 +48,6 @@ internal class Program
         {
             throw new Exception("R2 Endpoint is empty");
         }
-
-        _client = new AmazonS3Client(
-                                     R2AccessKeyId,
-                                     R2SecretAccessKey,
-                                     new AmazonS3Config
-                                     {
-                                         ServiceURL     = R2Endpoint,
-                                         ForcePathStyle = true,
-                                     });
 
         if (args[0] == "hot")
         {
