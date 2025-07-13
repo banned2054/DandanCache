@@ -12,7 +12,7 @@ public class BilibiliUtils
     private static async Task<T> Fetch<T>(string                      path,
                                           Dictionary<string, string>? header = null)
     {
-        header = header ?? new Dictionary<string, string>
+        header ??= new Dictionary<string, string>
         {
             ["User-Agent"] =
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -64,7 +64,7 @@ public class BilibiliUtils
         var response = await Fetch<string>($"pgc/view/web/ep/list?season_id={seasonId}");
         Console.WriteLine(response);
         var result = JsonConvert.DeserializeObject<BilibiliCidListResponse>(response);
-        if (result?.Result?.Episodes == null || result.Result.Episodes.Count == 0) return default;
+        if (result?.Result?.Episodes == null || result.Result.Episodes.Count == 0) return null;
         return result.Result.Episodes
                      .OrderBy(e => e.PubTimeUnix)
                      .Where(e => string.IsNullOrWhiteSpace(e.NumberStr) || decimal.TryParse(e.NumberStr, out _))

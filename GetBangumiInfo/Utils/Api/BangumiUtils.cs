@@ -10,7 +10,7 @@ public class BangumiUtils
     {
         const string url = "https://api.bgm.tv/calendar";
 
-        var headers = new Dictionary<string, string>()
+        var headers = new Dictionary<string, string>
         {
             ["accept"] = "application/json"
         };

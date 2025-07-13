@@ -38,7 +38,7 @@ public class UpdateController
             Console.WriteLine($"\n🎬 Processing {name} (ID: {bangumiId})");
 
             var mapping = mappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
-            if (mapping == default)
+            if (mapping == null)
             {
                 Console.WriteLine("⚠️ Mapping not found, skipping.");
                 continue;
@@ -225,13 +225,13 @@ public class UpdateController
                 };
                 db.MappingList.Add(nowItem);
                 allMappings.Add(nowItem); // 保持本地缓存一致
-                await AddBatch(db);
             }
             else
             {
                 nowItem.DandanId = shortInfo.Id;
-                await AddBatch(db);
             }
+
+            await AddBatch(db);
         }
 
         await SaveChangesWithRetryAsync(db);
