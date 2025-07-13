@@ -5,9 +5,6 @@ namespace GetBangumiInfo.Models.Dandan;
 
 public class DandanEpisode
 {
-    [JsonProperty("seasonId")]
-    public string? SeasonId { get; set; }
-
     [JsonProperty("episodeId")]
     public int EpisodeId { get; set; }
 

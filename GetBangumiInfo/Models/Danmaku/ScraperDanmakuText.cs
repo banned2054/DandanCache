@@ -18,16 +18,16 @@ public class ScraperDanmakuText : IXmlSerializable
     /// </summary>
     public int Mode { get; set; }
 
-    public int Fontsize { get; set; } = 25; //文字大小
+    public int FontSize { get; set; } = 25; //文字大小
 
     /// <summary>
     /// 弹幕颜色，默认白色
     /// </summary>
     public uint Color { get; set; } = 16777215;
 
-    public string MidHash { get; set; } //发送者UID的HASH
-    public string Content { get; set; } //弹幕内容
-    public long   Ctime   { get; set; } //发送时间
+    public string MidHash  { get; set; } //发送者UID的HASH
+    public string Content  { get; set; } //弹幕内容
+    public long   SendTime { get; set; } //发送时间
 
     public int Weight { get; set; } = 1; //权重
 
@@ -50,7 +50,7 @@ public class ScraperDanmakuText : IXmlSerializable
         // <d p="944.95400,5,25,16707842,1657598634,0,ece5c9d1,1094775706690331648,11">今天的风儿甚是喧嚣</d>
         // time, mode, size, color, create, pool, sender, id, weight(屏蔽等级)
         var time = (Convert.ToDouble(Progress) / 1000).ToString("F05");
-        var attr = $"{time},{Mode},{Fontsize},{Color},{Ctime},{Pool},{MidHash},{Id},{Weight}";
+        var attr = $"{time},{Mode},{FontSize},{Color},{SendTime},{Pool},{MidHash},{Id},{Weight}";
         writer.WriteAttributeString("p", attr);
         writer.WriteString(IsValidXmlString(Content) ? Content : RemoveInvalidXmlChars(Content));
     }
