@@ -1,9 +1,12 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace GetBangumiInfo.Utils;
 
 public class StringUtils
 {
+    private static Regex _bangumiUrlRegex = new(@"(?:bgm|bangumi)\.tv/subject/(?<subjectId>\d+)");
+
     public static bool IsPropertyNull(string? line)
     {
         if (string.IsNullOrWhiteSpace(line)) return true;
@@ -29,5 +32,17 @@ public class StringUtils
         if (string.IsNullOrWhiteSpace(airdateStr)) return false;
 
         return DateTime.TryParse(airdateStr, out var airdate) && TimeUtils.IsWithinThreeMonths(airdate);
+    }
+
+    public static bool IsBangumiUrl(string url)
+    {
+        return _bangumiUrlRegex.IsMatch(url);
+    }
+
+    public static int GetBangumiIdFromUrl(string url)
+    {
+        if (!IsBangumiUrl(url)) return -1;
+        var match = _bangumiUrlRegex.Match(url);
+        return int.Parse(match.Groups["subjectId"].Value);
     }
 }
