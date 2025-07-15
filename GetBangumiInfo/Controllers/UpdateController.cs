@@ -3,14 +3,12 @@ using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils;
 using GetBangumiInfo.Utils.Api;
 using Microsoft.EntityFrameworkCore;
-using System.Text.RegularExpressions;
 
 namespace GetBangumiInfo.Controllers;
 
 public class UpdateController
 {
-    public static readonly Regex BangumiRegex         = new(@"subject/(?<id>\d+)");
-    private const          int   MaxDataBaseBatchSize = 5;
+    private const int MaxDataBaseBatchSize = 5;
 
     private static int _counter;
 
@@ -188,8 +186,7 @@ public class UpdateController
         Console.WriteLine("🎉 UpdateBangumi completed successfully!");
     }
 
-
-    public static async Task UpdateByDandan(MyDbContext db)
+    public static async Task UpdateMapping(MyDbContext db)
     {
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();
         if (shortInfoList == null || shortInfoList.Count == 0)
@@ -208,18 +205,15 @@ public class UpdateController
             var fullInfo = await DandanPlayUtils.GetFullAnimeInfo(shortInfo.Id);
             if (fullInfo == null) continue;
 
-            var match = BangumiRegex.Match(fullInfo.BangumiUrl);
-            if (!match.Success) continue;
-
-            var bangumiId = int.Parse(match.Groups["id"].Value);
-            if (bangumiId < 0) continue;
+            var bangumiId = fullInfo.BangumiId;
+            if (bangumiId is null or -1) continue;
 
             var nowItem = allMappings.FirstOrDefault(e => e.BangumiId == bangumiId);
             if (nowItem == null)
             {
                 nowItem = new Mapping
                 {
-                    BangumiId  = bangumiId,
+                    BangumiId  = bangumiId.Value,
                     DandanId   = shortInfo.Id,
                     BilibiliId = -1
                 };
