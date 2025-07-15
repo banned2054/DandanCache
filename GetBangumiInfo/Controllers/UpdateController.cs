@@ -228,7 +228,8 @@ public class UpdateController
             var mapping = mappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
             if (mapping == null)
             {
-                Console.WriteLine("⚠️ Mapping not found, skipping.");
+                if (!idList.Contains(bangumiId))
+                    Console.WriteLine("⚠️ Mapping not found, skipping.");
                 continue;
             }
 
@@ -315,8 +316,8 @@ public class UpdateController
         var dbHotList  = db.EpisodeList.ToList();
         var dbColdList = db.EpisodeListCold.ToList();
 
-        var dbHotDict    = dbHotList.ToDictionary(e => e.Id);
-        var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
+        var dbHotDict  = dbHotList.ToDictionary(e => e.Id);
+        var dbColdDict = dbColdList.ToDictionary(e => e.Id);
 
 
         var addedHot = 0;
