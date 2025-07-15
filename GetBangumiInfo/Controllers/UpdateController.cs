@@ -317,20 +317,7 @@ public class UpdateController
 
         var dbHotDict    = dbHotList.ToDictionary(e => e.Id);
         var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
-        var tempHotDict  = tempHotList.ToDictionary(e => e.Id);
-        var tempColdDict = tempColdList.ToDictionary(e => e.Id);
 
-        // --- 热表处理 ---
-        Console.WriteLine("🧹 Cleaning up hot episodes...");
-        var removedHot = 0;
-        foreach (var dbItem in dbHotList.Where(dbItem => !tempHotDict.ContainsKey(dbItem.Id)))
-        {
-            db.EpisodeList.Remove(dbItem);
-            removedHot++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"🗑 Removed {removedHot} hot episodes not in temp list.");
 
         var addedHot = 0;
         Console.WriteLine("➕ Adding new hot episodes...");
@@ -342,17 +329,6 @@ public class UpdateController
         }
 
         Console.WriteLine($"✅ Added {addedHot} new hot episodes.");
-
-        Console.WriteLine("🧹 Cleaning up cold episodes...");
-        var removedCold = 0;
-        foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
-        {
-            db.EpisodeListCold.Remove(dbItem);
-            removedCold++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"🗑 Removed {removedCold} cold episodes not in temp list.");
 
         var addedCold = 0;
         Console.WriteLine("➕ Adding new cold episodes...");
