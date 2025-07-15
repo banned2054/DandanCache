@@ -207,8 +207,13 @@ public class UpdateController
         bangumiList = bangumiList
                      .Where(e =>
                       {
-                          var mapped = mappingList.First(m => m.DandanId == e.Id).BangumiId;
-                          return !idList.Contains(mapped);
+                          var mapping = mappingList.FirstOrDefault(m => m.DandanId == e.Id);
+                          if (mapping == null)
+                          {
+                              Console.WriteLine($"Mapping not contains, id:{e.Id}");
+                          }
+
+                          return mapping != null && !idList.Contains(mapping.BangumiId);
                       })
                      .ToList();
         Console.WriteLine($"📊 Loaded {mappingList.Count} mapping entries.");
@@ -382,7 +387,7 @@ public class UpdateController
 
         // 🌟 1. 一次性加载 MappingList 数据，提高查找效率
         var allMappings       = await db.MappingList.ToListAsync();
-        var existingDandanIds = allMappings.Select(m => m.DandanId).ToHashSet();
+        var existingDandanIds = allMappings.Select(m => m.DandanId).Distinct();
 
         // 🌟 2. 添加或更新 DandanId 与 BangumiId
         foreach (var shortInfo in shortInfoList.Where(shortInfo => !existingDandanIds.Contains(shortInfo.Id)))
