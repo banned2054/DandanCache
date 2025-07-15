@@ -221,7 +221,7 @@ public class UpdateController
         _counter = 0;
 
         foreach (var (bangumiId, name) in bangumiList
-                    .Select(e => (e.Id, e.Title)))
+                    .Select(e => (mappingList.First(m => m.DandanId == e.Id).BangumiId, e.Title)))
         {
             Console.WriteLine($"\n🎬 Processing {name} (ID: {bangumiId})");
 
