@@ -26,4 +26,4 @@ jobs:
               run: dotnet build DanmakuUpdate/DanmakuUpdate.csproj --configuration Release
 
             - name: Run Bangumi Info Update
-              run: dotnet run --project DanmakuUpdate/DanmakuUpdate.csproj --configuration Release -- hot
+              run: dotnet run --project DanmakuUpdate/DanmakuUpdate.csproj --configuration Release -- cold
