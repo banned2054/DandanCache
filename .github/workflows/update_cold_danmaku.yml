@@ -1,0 +1,29 @@
+# .github/workflows/get_bangumi_info.yml
+name: Download Cold Danmaku and Update to R2
+
+on:
+    workflow_dispatch:
+
+jobs:
+    get-hot-danmaku:
+        runs-on: ubuntu-latest
+        env:
+            DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
+            DandanAppId: ${{ secrets.DANDANPLAY_APP_ID }}
+            DandanAppSecret: ${{ secrets.DANDANPLAY_APP_SECRET }}
+            R2AccessKeyId: ${{ secrets.R2_ACCESS_KEY_ID }}
+            R2SecretAccessKey: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+            R2Endpoint: ${{ secrets.R2_END_POINT }}
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Setup .NET
+              uses: actions/setup-dotnet@v4
+              with:
+                  dotnet-version: "9.0.x"
+
+            - name: Restore & Build
+              run: dotnet build DanmakuUpdate/DanmakuUpdate.csproj --configuration Release
+
+            - name: Run Bangumi Info Update
+              run: dotnet run --project DanmakuUpdate/DanmakuUpdate.csproj --configuration Release -- hot
