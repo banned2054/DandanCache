@@ -1,3 +1,4 @@
+using GetBangumiInfo.Utils;
 using Newtonsoft.Json;
 
 namespace GetBangumiInfo.Models.Dandan;
@@ -15,4 +16,7 @@ public class FullAnimeInfo
 
     [JsonProperty("bangumiUrl")]
     public string BangumiUrl { get; set; } = string.Empty;
+
+    [JsonIgnore]
+    public int? BangumiId => StringUtils.IsBangumiUrl(BangumiUrl) ? StringUtils.GetBangumiIdFromUrl(BangumiUrl) : null;
 }
