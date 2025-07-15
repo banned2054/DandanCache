@@ -186,6 +186,191 @@ public class UpdateController
         Console.WriteLine("🎉 UpdateBangumi completed successfully!");
     }
 
+    public static async Task UpdateDandan(MyDbContext db)
+    {
+        var tempHotList  = new List<Episode>();
+        var tempColdList = new List<EpisodeCold>();
+
+        Console.WriteLine("📅 Fetching dandan recent...");
+        var bangumiList = await DandanPlayUtils.GetRecentAnime();
+        if (bangumiList == null) return;
+        Console.WriteLine($"📅 Got {bangumiList.Count} items from calendar.");
+
+        Console.WriteLine("📊 Loading mapping list from DB...");
+        var mappingList = db.MappingList.ToList();
+        var idList = db.EpisodeList
+                       .Select(e => e.SubjectId)
+                       .Concat(db.EpisodeListCold.Select(e => e.SubjectId))
+                       .Distinct()
+                       .ToList();
+        // 去除已有的id
+        bangumiList = bangumiList
+                     .Where(e =>
+                      {
+                          var mapped = mappingList.First(m => m.DandanId == e.Id).BangumiId;
+                          return !idList.Contains(mapped);
+                      })
+                     .ToList();
+        Console.WriteLine($"📊 Loaded {mappingList.Count} mapping entries.");
+
+        _counter = 0;
+
+        foreach (var (bangumiId, name) in bangumiList
+                    .Select(e => (e.Id, e.Title)))
+        {
+            Console.WriteLine($"\n🎬 Processing {name} (ID: {bangumiId})");
+
+            var mapping = mappingList.FirstOrDefault(e => e.BangumiId == bangumiId);
+            if (mapping == null)
+            {
+                Console.WriteLine("⚠️ Mapping not found, skipping.");
+                continue;
+            }
+
+            if (!mapping.IsJapaneseAnime!.Value)
+            {
+                Console.WriteLine("🔕 Not Japanese anime, skipping.");
+                continue;
+            }
+
+            var        bilibiliId      = mapping.BilibiliId;
+            List<int>? bilibiliHotList = null;
+            if (bilibiliId != -1)
+            {
+                Console.WriteLine("📡 Fetching bilibili media ID...");
+                var mediaId = await BilibiliUtils.GetSeasonIdByMediaId(bilibiliId);
+                if (mediaId != -1)
+                {
+                    Console.WriteLine("🎯 Got bilibili season ID, fetching episodes...");
+                    var bilibiliEpisodeList = await BilibiliUtils.GetEpisodeListBySeasonIdAsync(mediaId);
+                    bilibiliHotList = bilibiliEpisodeList!
+                                     .Where(e => TimeUtils.IsWithinThreeDays(e.PubDate))
+                                     .Select(e => e.Number!.Value)
+                                     .ToList();
+                    Console.WriteLine($"🔥 Found {bilibiliHotList.Count} recent bilibili episodes.");
+                }
+                else
+                {
+                    Console.WriteLine("⚠️ No bilibili media found.");
+                }
+            }
+
+            Console.WriteLine("📥 Fetching DandanPlay info...");
+            var dandanId = mapping.DandanId;
+            var info     = await DandanPlayUtils.GetFullAnimeInfo(dandanId);
+            if (info == null)
+            {
+                Console.WriteLine("⚠️ DandanPlay info not found, skipping.");
+                continue;
+            }
+
+            var episodeList = info.EpisodeList!
+                                  .Where(e => int.TryParse(e.EpisodeNumber, out _))
+                                  .Where(e => e.AirDate != null)
+                                  .OrderBy(e => e.AirDate)
+                                  .ToList();
+
+            Console.WriteLine($"🎞 Total episodes to check: {episodeList.Count}");
+
+            for (var i = 0; i < episodeList.Count; i++)
+            {
+                var episode = episodeList[i];
+
+                var isHot = (bilibiliHotList != null && bilibiliHotList.Contains(i + 1)) ||
+                            TimeUtils.IsWithinThreeDays(episode.AirDate!.Value);
+
+                if (isHot)
+                {
+                    if (tempHotList.All(e => e.Id != episode.EpisodeId))
+                    {
+                        tempHotList.Add(new Episode
+                        {
+                            Id         = episode.EpisodeId,
+                            EpisodeNum = i + 1,
+                            SubjectId  = bangumiId
+                        });
+                    }
+                }
+                else if (TimeUtils.IsWithinThreeMonths(episode.AirDate!.Value))
+                {
+                    if (tempColdList.All(e => e.Id != episode.EpisodeId))
+                    {
+                        tempColdList.Add(new EpisodeCold
+                        {
+                            Id         = episode.EpisodeId,
+                            EpisodeNum = i + 1,
+                            SubjectId  = bangumiId
+                        });
+                    }
+                }
+            }
+        }
+
+        Console.WriteLine("\n🧊 Loading existing hot/cold lists from DB...");
+        var dbHotList  = db.EpisodeList.ToList();
+        var dbColdList = db.EpisodeListCold.ToList();
+
+        var dbHotDict    = dbHotList.ToDictionary(e => e.Id);
+        var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
+        var tempHotDict  = tempHotList.ToDictionary(e => e.Id);
+        var tempColdDict = tempColdList.ToDictionary(e => e.Id);
+
+        // --- 热表处理 ---
+        Console.WriteLine("🧹 Cleaning up hot episodes...");
+        var removedHot = 0;
+        foreach (var dbItem in dbHotList.Where(dbItem => !tempHotDict.ContainsKey(dbItem.Id)))
+        {
+            db.EpisodeList.Remove(dbItem);
+            removedHot++;
+            await AddBatch(db);
+        }
+
+        Console.WriteLine($"🗑 Removed {removedHot} hot episodes not in temp list.");
+
+        var addedHot = 0;
+        Console.WriteLine("➕ Adding new hot episodes...");
+        foreach (var tempItem in tempHotList.Where(tempItem => !dbHotDict.ContainsKey(tempItem.Id)))
+        {
+            await db.EpisodeList.AddAsync(tempItem);
+            addedHot++;
+            await AddBatch(db);
+        }
+
+        Console.WriteLine($"✅ Added {addedHot} new hot episodes.");
+
+        Console.WriteLine("🧹 Cleaning up cold episodes...");
+        var removedCold = 0;
+        foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
+        {
+            db.EpisodeListCold.Remove(dbItem);
+            removedCold++;
+            await AddBatch(db);
+        }
+
+        Console.WriteLine($"🗑 Removed {removedCold} cold episodes not in temp list.");
+
+        var addedCold = 0;
+        Console.WriteLine("➕ Adding new cold episodes...");
+        foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
+        {
+            await db.EpisodeListCold.AddAsync(tempItem);
+            addedCold++;
+            await AddBatch(db);
+        }
+
+        Console.WriteLine($"✅ Added {addedCold} new cold episodes.");
+
+        // 最后一次保存
+        if (_counter > 0)
+        {
+            Console.WriteLine("💾 Saving remaining batched changes...");
+            await SaveChangesWithRetryAsync(db);
+            _counter = 0;
+        }
+
+        Console.WriteLine("🎉 UpdateBangumi completed successfully!");
+    }
+
     public static async Task UpdateMapping(MyDbContext db)
     {
         var shortInfoList = await DandanPlayUtils.GetRecentAnime();

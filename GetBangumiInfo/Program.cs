@@ -38,5 +38,6 @@ internal class Program
         var db = new MyDbContext();
         await UpdateController.UpdateMapping(db);
         await UpdateController.UpdateBangumi(db);
+        await UpdateController.UpdateDandan(db);
     }
 }
