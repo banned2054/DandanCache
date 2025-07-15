@@ -16,16 +16,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<Folder Include="Native\" />
-	</ItemGroup>
-
-	<ItemGroup>
 		<Content Include=".env" Condition="Exists('.env')">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Reference Include="Google.Protobuf">
-			<HintPath>Libs\Google.Protobuf.dll</HintPath>
-			<Private>true</Private>
-		</Reference>
 	</ItemGroup>
 </Project>
