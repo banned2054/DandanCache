@@ -57,7 +57,13 @@ internal class Program
             foreach (var episode in episodeList)
             {
                 var danmaku = await DandanPlayUtils.GetDanmakuAsync(episode.Id);
-                var path    = $"{episode.SubjectId}/{episode.EpisodeNum}.xml";
+                if (danmaku == null)
+                {
+                    Console.WriteLine($"⚠️ Episode {episode.Id} 没有获取到弹幕");
+                    continue;
+                }
+
+                var path = $"{episode.SubjectId}/{episode.EpisodeNum}.xml";
                 await UploadDanmakuXmlAsync(danmaku!, path);
             }
         }
@@ -67,7 +73,13 @@ internal class Program
             foreach (var episode in episodeList)
             {
                 var danmaku = await DandanPlayUtils.GetDanmakuAsync(episode.Id);
-                var path    = $"{episode.SubjectId}/{episode.EpisodeNum}.xml";
+                if (danmaku == null)
+                {
+                    Console.WriteLine($"⚠️ Episode {episode.Id} 没有获取到弹幕");
+                    continue;
+                }
+
+                var path = $"{episode.SubjectId}/{episode.EpisodeNum}.xml";
                 await UploadDanmakuXmlAsync(danmaku!, path);
             }
         }
