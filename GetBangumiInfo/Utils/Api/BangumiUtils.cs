@@ -58,12 +58,8 @@ public class BangumiUtils
         var          path     = Path.Combine(AppContext.BaseDirectory, fileName);
 
         using var reader = new StreamReader(path);
-
-        while (!reader.EndOfStream)
+        while (await reader.ReadLineAsync() is { } line)
         {
-            var line = await reader.ReadLineAsync();
-            if (line == null) continue;
-
             if (!line.Contains($"\"id\":{subjectId},")) continue;
 
             try
@@ -89,12 +85,8 @@ public class BangumiUtils
         var path    = Path.Combine(AppContext.BaseDirectory, fileName);
 
         using var reader = new StreamReader(path);
-
-        while (!reader.EndOfStream)
+        while (await reader.ReadLineAsync() is { } line)
         {
-            var line = await reader.ReadLineAsync();
-            if (line == null) continue;
-
             if (!StringUtils.QuickFilter(line, subjectId)) continue;
 
             try

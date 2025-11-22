@@ -64,7 +64,7 @@ internal class Program
                 }
 
                 var path = $"{episode.SubjectId}/{episode.EpisodeNum}.xml";
-                await UploadDanmakuXmlAsync(danmaku!, path);
+                await UploadDanmakuXmlAsync(danmaku, path);
             }
         }
         else
@@ -80,11 +80,10 @@ internal class Program
                 }
 
                 var path = $"{episode.SubjectId}/{episode.EpisodeNum}.xml";
-                await UploadDanmakuXmlAsync(danmaku!, path);
+                await UploadDanmakuXmlAsync(danmaku, path);
             }
         }
     }
-
 
     public static async Task UploadDanmakuXmlAsync(ScraperDanmaku danmaku, string objectKey)
     {

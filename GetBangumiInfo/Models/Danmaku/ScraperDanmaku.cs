@@ -29,7 +29,7 @@ public class ScraperDanmaku
     public string Source { get; set; } = "k-v";
 
     [XmlElement("d")]
-    public List<ScraperDanmakuText> Items { get; set; } = new();
+    public List<ScraperDanmakuText> Items { get; set; } = [];
 
     public byte[] ToXml()
     {

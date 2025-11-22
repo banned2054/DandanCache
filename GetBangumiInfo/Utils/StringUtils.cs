@@ -5,7 +5,7 @@ namespace GetBangumiInfo.Utils;
 
 public class StringUtils
 {
-    private static Regex _bangumiUrlRegex = new(@"(?:bgm|bangumi)\.tv/subject/(?<subjectId>\d+)");
+    private static readonly Regex BangumiUrlRegex = new(@"(?:bgm|bangumi)\.tv/subject/(?<subjectId>\d+)");
 
     public static bool IsPropertyNull(string? line)
     {
@@ -36,13 +36,13 @@ public class StringUtils
 
     public static bool IsBangumiUrl(string url)
     {
-        return _bangumiUrlRegex.IsMatch(url);
+        return BangumiUrlRegex.IsMatch(url);
     }
 
     public static int GetBangumiIdFromUrl(string url)
     {
         if (!IsBangumiUrl(url)) return -1;
-        var match = _bangumiUrlRegex.Match(url);
+        var match = BangumiUrlRegex.Match(url);
         return int.Parse(match.Groups["subjectId"].Value);
     }
 }
