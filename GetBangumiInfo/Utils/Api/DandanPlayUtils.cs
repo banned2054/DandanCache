@@ -121,6 +121,23 @@ public class DandanPlayUtils
         return null;
     }
 
+    public static async Task<FullAnimeInfo?> GetFullAnimeInfoByBgmId(int id)
+    {
+        var url = $"https://api.dandanplay.net/api/v2/bangumi/bgmtv/{id}";
+        try
+        {
+            var json     = await NetUtils.FetchAsync<string>(url, BuildHeaders());
+            var response = JsonConvert.DeserializeObject<AnimeFullResponse>(json);
+            return response!.AnimeInfo;
+        }
+        catch (HttpRequestException ex)
+        {
+            Console.WriteLine($"Request failed: {ex.Message}");
+        }
+
+        return null;
+    }
+
     public static async Task<List<ShortAnimeInfo>?> SearchAnimeByName(string keyword, string? type = null)
     {
         if (string.IsNullOrEmpty(keyword) || keyword.Length < 2) return null;
