@@ -1,4 +1,5 @@
 using GetBangumiInfo.Database;
+using GetBangumiInfo.Models.Dandan;
 using GetBangumiInfo.Models.Database;
 using GetBangumiInfo.Utils;
 using GetBangumiInfo.Utils.Api;
@@ -11,6 +12,164 @@ public class UpdateController
     private const int MaxDataBaseBatchSize = 5;
 
     private static int _counter;
+
+    /// <summary>
+    /// 获取 Bilibili 热门剧集列表（最近3天内发布的剧集编号）
+    /// </summary>
+    private static async Task<List<int>?> GetBilibiliHotListAsync(int bilibiliId)
+    {
+        if (bilibiliId == -1) return null;
+
+        Console.WriteLine("📡 Fetching bilibili media ID...");
+        var mediaId = await BilibiliUtils.GetSeasonIdByMediaId(bilibiliId);
+        if (mediaId == -1)
+        {
+            Console.WriteLine("⚠️ No bilibili media found.");
+            return null;
+        }
+
+        Console.WriteLine("🎯 Got bilibili season ID, fetching episodes...");
+        var bilibiliEpisodeList = await BilibiliUtils.GetEpisodeListBySeasonIdAsync(mediaId);
+        var bilibiliHotList = bilibiliEpisodeList!
+                             .Where(e => TimeUtils.IsWithinThreeDays(e.PubDate))
+                             .Select(e => e.Number!.Value)
+                             .ToList();
+        Console.WriteLine($"🔥 Found {bilibiliHotList.Count} recent bilibili episodes.");
+        return bilibiliHotList;
+    }
+
+    /// <summary>
+    /// 处理番剧剧集，分类到热/冷列表
+    /// </summary>
+    private static void ProcessEpisodes(
+        List<DandanEpisode> episodeList,
+        int                 bangumiId,
+        List<int>?          bilibiliHotList,
+        List<Episode>       tempHotList,
+        List<EpisodeCold>   tempColdList)
+    {
+        for (var i = 0; i < episodeList.Count; i++)
+        {
+            var episode = episodeList[i];
+
+            var isHot = (bilibiliHotList != null && bilibiliHotList.Contains(i + 1)) ||
+                        TimeUtils.IsWithinThreeDays(episode.AirDate!.Value);
+
+            if (isHot)
+            {
+                if (tempHotList.All(e => e.Id != episode.EpisodeId))
+                {
+                    tempHotList.Add(new Episode
+                    {
+                        Id         = episode.EpisodeId,
+                        EpisodeNum = i + 1,
+                        SubjectId  = bangumiId
+                    });
+                }
+            }
+            else if (TimeUtils.IsWithinThreeMonths(episode.AirDate!.Value))
+            {
+                if (tempColdList.All(e => e.Id != episode.EpisodeId))
+                {
+                    tempColdList.Add(new EpisodeCold
+                    {
+                        Id         = episode.EpisodeId,
+                        EpisodeNum = i + 1,
+                        SubjectId  = bangumiId
+                    });
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 同步热表数据（移除不存在的数据，添加新数据）
+    /// </summary>
+    private static async Task SyncHotListAsync(
+        MyDbContext   db,
+        List<Episode> tempHotList,
+        bool          removeNotInTemp)
+    {
+        var dbHotList   = db.EpisodeList.ToList();
+        var dbHotDict   = dbHotList.ToDictionary(e => e.Id);
+        var tempHotDict = tempHotList.ToDictionary(e => e.Id);
+
+        if (removeNotInTemp)
+        {
+            Console.WriteLine("🧹 Cleaning up hot episodes...");
+            var removedHot = 0;
+            foreach (var dbItem in dbHotList.Where(dbItem => !tempHotDict.ContainsKey(dbItem.Id)))
+            {
+                db.EpisodeList.Remove(dbItem);
+                removedHot++;
+                await AddBatch(db);
+            }
+
+            Console.WriteLine($"🗑 Removed {removedHot} hot episodes not in temp list.");
+        }
+
+        var addedHot = 0;
+        Console.WriteLine("➕ Adding new hot episodes...");
+        foreach (var tempItem in tempHotList.Where(tempItem => !dbHotDict.ContainsKey(tempItem.Id)))
+        {
+            await db.EpisodeList.AddAsync(tempItem);
+            addedHot++;
+            await AddBatch(db);
+        }
+
+        Console.WriteLine($"✅ Added {addedHot} new hot episodes.");
+    }
+
+    /// <summary>
+    /// 同步冷表数据（移除不存在的数据，添加新数据）
+    /// </summary>
+    private static async Task SyncColdListAsync(
+        MyDbContext       db,
+        List<EpisodeCold> tempColdList,
+        bool              removeNotInTemp)
+    {
+        var dbColdList   = db.EpisodeListCold.ToList();
+        var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
+        var tempColdDict = tempColdList.ToDictionary(e => e.Id);
+
+        if (removeNotInTemp)
+        {
+            Console.WriteLine("🧹 Cleaning up cold episodes...");
+            var removedCold = 0;
+            foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
+            {
+                db.EpisodeListCold.Remove(dbItem);
+                removedCold++;
+                await AddBatch(db);
+            }
+
+            Console.WriteLine($"🗑 Removed {removedCold} cold episodes not in temp list.");
+        }
+
+        var addedCold = 0;
+        Console.WriteLine("➕ Adding new cold episodes...");
+        foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
+        {
+            await db.EpisodeListCold.AddAsync(tempItem);
+            addedCold++;
+            await AddBatch(db);
+        }
+
+        Console.WriteLine($"✅ Added {addedCold} new cold episodes.");
+    }
+
+    /// <summary>
+    /// 保存剩余批次数据并重置计数器
+    /// </summary>
+    private static async Task FlushBatchAsync(MyDbContext db)
+    {
+        if (_counter > 0)
+        {
+            Console.WriteLine("💾 Saving remaining batched changes...");
+            await SaveChangesWithRetryAsync(db);
+            _counter = 0;
+        }
+    }
 
     public static async Task UpdateBangumi(MyDbContext db)
     {
@@ -48,31 +207,10 @@ public class UpdateController
                 continue;
             }
 
-            var        bilibiliId      = mapping.BilibiliId;
-            List<int>? bilibiliHotList = null;
-            if (bilibiliId != -1)
-            {
-                Console.WriteLine("📡 Fetching bilibili media ID...");
-                var mediaId = await BilibiliUtils.GetSeasonIdByMediaId(bilibiliId);
-                if (mediaId != -1)
-                {
-                    Console.WriteLine("🎯 Got bilibili season ID, fetching episodes...");
-                    var bilibiliEpisodeList = await BilibiliUtils.GetEpisodeListBySeasonIdAsync(mediaId);
-                    bilibiliHotList = bilibiliEpisodeList!
-                                     .Where(e => TimeUtils.IsWithinThreeDays(e.PubDate))
-                                     .Select(e => e.Number!.Value)
-                                     .ToList();
-                    Console.WriteLine($"🔥 Found {bilibiliHotList.Count} recent bilibili episodes.");
-                }
-                else
-                {
-                    Console.WriteLine("⚠️ No bilibili media found.");
-                }
-            }
+            var bilibiliHotList = await GetBilibiliHotListAsync(mapping.BilibiliId);
 
             Console.WriteLine("📥 Fetching DandanPlay info...");
-            var dandanId = mapping.DandanId;
-            var info     = await DandanPlayUtils.GetFullAnimeInfo(dandanId);
+            var info = await DandanPlayUtils.GetFullAnimeInfo(mapping.DandanId);
             if (info == null)
             {
                 Console.WriteLine("⚠️ DandanPlay info not found, skipping.");
@@ -87,101 +225,13 @@ public class UpdateController
 
             Console.WriteLine($"🎞 Total episodes to check: {episodeList.Count}");
 
-            for (var i = 0; i < episodeList.Count; i++)
-            {
-                var episode = episodeList[i];
-
-                var isHot = (bilibiliHotList != null && bilibiliHotList.Contains(i + 1)) ||
-                            TimeUtils.IsWithinThreeDays(episode.AirDate!.Value);
-
-                if (isHot)
-                {
-                    if (tempHotList.All(e => e.Id != episode.EpisodeId))
-                    {
-                        tempHotList.Add(new Episode
-                        {
-                            Id         = episode.EpisodeId,
-                            EpisodeNum = i + 1,
-                            SubjectId  = bangumiId
-                        });
-                    }
-                }
-                else if (TimeUtils.IsWithinThreeMonths(episode.AirDate!.Value))
-                {
-                    if (tempColdList.All(e => e.Id != episode.EpisodeId))
-                    {
-                        tempColdList.Add(new EpisodeCold
-                        {
-                            Id         = episode.EpisodeId,
-                            EpisodeNum = i + 1,
-                            SubjectId  = bangumiId
-                        });
-                    }
-                }
-            }
+            ProcessEpisodes(episodeList, bangumiId, bilibiliHotList, tempHotList, tempColdList);
         }
 
         Console.WriteLine("\n🧊 Loading existing hot/cold lists from DB...");
-        var dbHotList  = db.EpisodeList.ToList();
-        var dbColdList = db.EpisodeListCold.ToList();
-
-        var dbHotDict    = dbHotList.ToDictionary(e => e.Id);
-        var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
-        var tempHotDict  = tempHotList.ToDictionary(e => e.Id);
-        var tempColdDict = tempColdList.ToDictionary(e => e.Id);
-
-        // --- 热表处理 ---
-        Console.WriteLine("🧹 Cleaning up hot episodes...");
-        var removedHot = 0;
-        foreach (var dbItem in dbHotList.Where(dbItem => !tempHotDict.ContainsKey(dbItem.Id)))
-        {
-            db.EpisodeList.Remove(dbItem);
-            removedHot++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"🗑 Removed {removedHot} hot episodes not in temp list.");
-
-        var addedHot = 0;
-        Console.WriteLine("➕ Adding new hot episodes...");
-        foreach (var tempItem in tempHotList.Where(tempItem => !dbHotDict.ContainsKey(tempItem.Id)))
-        {
-            await db.EpisodeList.AddAsync(tempItem);
-            addedHot++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"✅ Added {addedHot} new hot episodes.");
-
-        Console.WriteLine("🧹 Cleaning up cold episodes...");
-        var removedCold = 0;
-        foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
-        {
-            db.EpisodeListCold.Remove(dbItem);
-            removedCold++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"🗑 Removed {removedCold} cold episodes not in temp list.");
-
-        var addedCold = 0;
-        Console.WriteLine("➕ Adding new cold episodes...");
-        foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
-        {
-            await db.EpisodeListCold.AddAsync(tempItem);
-            addedCold++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"✅ Added {addedCold} new cold episodes.");
-
-        // 最后一次保存
-        if (_counter > 0)
-        {
-            Console.WriteLine("💾 Saving remaining batched changes...");
-            await SaveChangesWithRetryAsync(db);
-            _counter = 0;
-        }
+        await SyncHotListAsync(db, tempHotList, removeNotInTemp : true);
+        await SyncColdListAsync(db, tempColdList, removeNotInTemp : true);
+        await FlushBatchAsync(db);
 
         Console.WriteLine("🎉 UpdateBangumi completed successfully!");
     }
@@ -239,31 +289,10 @@ public class UpdateController
                 continue;
             }
 
-            var        bilibiliId      = mapping.BilibiliId;
-            List<int>? bilibiliHotList = null;
-            if (bilibiliId != -1)
-            {
-                Console.WriteLine("📡 Fetching bilibili media ID...");
-                var mediaId = await BilibiliUtils.GetSeasonIdByMediaId(bilibiliId);
-                if (mediaId != -1)
-                {
-                    Console.WriteLine("🎯 Got bilibili season ID, fetching episodes...");
-                    var bilibiliEpisodeList = await BilibiliUtils.GetEpisodeListBySeasonIdAsync(mediaId);
-                    bilibiliHotList = bilibiliEpisodeList!
-                                     .Where(e => TimeUtils.IsWithinThreeDays(e.PubDate))
-                                     .Select(e => e.Number!.Value)
-                                     .ToList();
-                    Console.WriteLine($"🔥 Found {bilibiliHotList.Count} recent bilibili episodes.");
-                }
-                else
-                {
-                    Console.WriteLine("⚠️ No bilibili media found.");
-                }
-            }
+            var bilibiliHotList = await GetBilibiliHotListAsync(mapping.BilibiliId);
 
             Console.WriteLine("📥 Fetching DandanPlay info...");
-            var dandanId = mapping.DandanId;
-            var info     = await DandanPlayUtils.GetFullAnimeInfo(dandanId);
+            var info = await DandanPlayUtils.GetFullAnimeInfo(mapping.DandanId);
             if (info == null)
             {
                 Console.WriteLine("⚠️ DandanPlay info not found, skipping.");
@@ -278,79 +307,15 @@ public class UpdateController
 
             Console.WriteLine($"🎞 Total episodes to check: {episodeList.Count}");
 
-            for (var i = 0; i < episodeList.Count; i++)
-            {
-                var episode = episodeList[i];
-
-                var isHot = (bilibiliHotList != null && bilibiliHotList.Contains(i + 1)) ||
-                            TimeUtils.IsWithinThreeDays(episode.AirDate!.Value);
-
-                if (isHot)
-                {
-                    if (tempHotList.All(e => e.Id != episode.EpisodeId))
-                    {
-                        tempHotList.Add(new Episode
-                        {
-                            Id         = episode.EpisodeId,
-                            EpisodeNum = i + 1,
-                            SubjectId  = bangumiId
-                        });
-                    }
-                }
-                else if (TimeUtils.IsWithinThreeMonths(episode.AirDate!.Value))
-                {
-                    if (tempColdList.All(e => e.Id != episode.EpisodeId))
-                    {
-                        tempColdList.Add(new EpisodeCold
-                        {
-                            Id         = episode.EpisodeId,
-                            EpisodeNum = i + 1,
-                            SubjectId  = bangumiId
-                        });
-                    }
-                }
-            }
+            ProcessEpisodes(episodeList, bangumiId, bilibiliHotList, tempHotList, tempColdList);
         }
 
         Console.WriteLine("\n🧊 Loading existing hot/cold lists from DB...");
-        var dbHotList  = db.EpisodeList.ToList();
-        var dbColdList = db.EpisodeListCold.ToList();
+        await SyncHotListAsync(db, tempHotList, removeNotInTemp : false);
+        await SyncColdListAsync(db, tempColdList, removeNotInTemp : false);
+        await FlushBatchAsync(db);
 
-        var dbHotDict  = dbHotList.ToDictionary(e => e.Id);
-        var dbColdDict = dbColdList.ToDictionary(e => e.Id);
-
-
-        var addedHot = 0;
-        Console.WriteLine("➕ Adding new hot episodes...");
-        foreach (var tempItem in tempHotList.Where(tempItem => !dbHotDict.ContainsKey(tempItem.Id)))
-        {
-            await db.EpisodeList.AddAsync(tempItem);
-            addedHot++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"✅ Added {addedHot} new hot episodes.");
-
-        var addedCold = 0;
-        Console.WriteLine("➕ Adding new cold episodes...");
-        foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
-        {
-            await db.EpisodeListCold.AddAsync(tempItem);
-            addedCold++;
-            await AddBatch(db);
-        }
-
-        Console.WriteLine($"✅ Added {addedCold} new cold episodes.");
-
-        // 最后一次保存
-        if (_counter > 0)
-        {
-            Console.WriteLine("💾 Saving remaining batched changes...");
-            await SaveChangesWithRetryAsync(db);
-            _counter = 0;
-        }
-
-        Console.WriteLine("🎉 UpdateBangumi completed successfully!");
+        Console.WriteLine("🎉 UpdateDandan completed successfully!");
     }
 
     public static async Task UpdateMapping(MyDbContext db)
