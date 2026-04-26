@@ -412,20 +412,64 @@ public class UpdateController
             {
                 Console.WriteLine($"[Attempt {attempt}] SaveChangesAsync failed: {ex.Message}");
 
+                // 详细输出并发冲突信息
+                if (ex is DbUpdateConcurrencyException concurrencyEx)
+                {
+                    Console.WriteLine("⚠️ Detected optimistic concurrency conflict:");
+                    foreach (var entry in concurrencyEx.Entries)
+                    {
+                        Console.WriteLine($"  - Entity: {entry.Entity.GetType().Name}");
+                        Console.WriteLine($"    State: {entry.State}");
+                        Console.WriteLine($"    Key: {string.Join(", ", entry.Properties.Where(p => p.Metadata.IsPrimaryKey()).Select(p => $"{p.Metadata.Name}={p.CurrentValue}"))}");
+
+                        // 输出被修改的属性
+                        if (entry.State == EntityState.Modified)
+                        {
+                            var modifiedProps = entry.Properties.Where(p => p.IsModified).Select(p => p.Metadata.Name);
+                            Console.WriteLine($"    Modified properties: {string.Join(", ", modifiedProps)}");
+                        }
+
+                        // 尝试获取数据库当前值
+                        try
+                        {
+                            await entry.ReloadAsync();
+                            Console.WriteLine("    Entity reloaded from database successfully.");
+                        }
+                        catch (Exception reloadEx)
+                        {
+                            Console.WriteLine($"    Failed to reload entity: {reloadEx.Message}");
+                        }
+                    }
+                }
+
                 if (attempt == maxRetries)
                 {
                     Console.WriteLine("Reached max retries. Rethrowing.");
                     throw;
                 }
 
-                await Task.Delay(delayMs);
+                var waitTime = delayMs * attempt;
+                Console.WriteLine($"⏳ Waiting {waitTime}ms before retry {attempt + 1}/{maxRetries}...");
+                await Task.Delay(waitTime);
             }
         }
     }
 
     private static bool IsTransient(Exception ex)
     {
-        return ex is DbUpdateException { InnerException: Npgsql.NpgsqlException exception } &&
-               (exception.Message.Contains("Timeout") || exception.Message.Contains("Exception while reading"));
+        // 处理 PostgreSQL 超时和读取异常
+        if (ex is DbUpdateException { InnerException: Npgsql.NpgsqlException exception } &&
+            (exception.Message.Contains("Timeout") || exception.Message.Contains("Exception while reading")))
+        {
+            return true;
+        }
+
+        // 处理乐观并发冲突异常 - 可以重试
+        if (ex is DbUpdateConcurrencyException)
+        {
+            return true;
+        }
+
+        return false;
     }
 }
