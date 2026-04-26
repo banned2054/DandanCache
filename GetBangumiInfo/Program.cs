@@ -12,7 +12,6 @@ internal class Program
 
         var dandanAppId     = Environment.GetEnvironmentVariable("DandanAppId");
         var dandanAppSecret = Environment.GetEnvironmentVariable("DandanAppSecret");
-        var connectSetting  = Environment.GetEnvironmentVariable("DatabaseConnectSetting");
 
         if (string.IsNullOrWhiteSpace(dandanAppId))
         {
@@ -22,11 +21,6 @@ internal class Program
         if (string.IsNullOrWhiteSpace(dandanAppSecret))
         {
             throw new Exception("App Secret is empty");
-        }
-
-        if (string.IsNullOrEmpty(connectSetting))
-        {
-            throw new Exception("Database Connect Setting Not Found.");
         }
 
         if (Environment.GetEnvironmentVariable("IsLocal") != "true")
