@@ -22,12 +22,44 @@ public class MyDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        var connectSetting = Environment.GetEnvironmentVariable("DatabaseConnectSetting");
-        if (string.IsNullOrEmpty(connectSetting))
+        var host     = Environment.GetEnvironmentVariable("DatabaseHost");
+        var port     = Environment.GetEnvironmentVariable("DatabasePort");
+        var table    = Environment.GetEnvironmentVariable("DatabaseTable");
+        var username = Environment.GetEnvironmentVariable("DatabaseUsername");
+        var password = Environment.GetEnvironmentVariable("DatabasePassword");
+
+        if (string.IsNullOrWhiteSpace(host))
         {
-            throw new Exception("Database Connect Setting Not Found.");
+            throw new Exception("Database host not found.");
         }
 
+        if (string.IsNullOrWhiteSpace(port))
+        {
+            throw new Exception("Database port not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(table))
+        {
+            throw new Exception("Database table not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            throw new Exception("Database username not found.");
+        }
+
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            throw new Exception("Database password not found.");
+        }
+
+        var connectSetting =
+            $"Host={host};"         +
+            $"Port={port};"         +
+            $"Database={table};"    +
+            $"Username={username};" +
+            $"Password={password};" +
+            $"SSL Mode=Require;Trust Server Certificate=true";
         optionsBuilder.UseNpgsql(connectSetting, opt =>
         {
             opt.EnableRetryOnFailure(3); // 最多重试3次
