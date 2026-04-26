@@ -10,7 +10,11 @@ jobs:
     update-bangumi-info:
         runs-on: ubuntu-latest
         env:
-            DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
+            DatabaseHost: ${{ secrets.DATABASE_HOST }}
+            DatabasePort: ${{ secrets.DATABASE_PORT }}
+            DatabaseTable: ${{ secrets.DATABASE_TABLE }}
+            DatabaseUsername: ${{ secrets.DATABASE_USERNAME }}
+            DatabasePassword: ${{ secrets.DATABASE_PASSWORD }}
             DandanAppId: ${{ secrets.DANDANPLAY_APP_ID }}
             DandanAppSecret: ${{ secrets.DANDANPLAY_APP_SECRET }}
         steps:
@@ -35,7 +39,11 @@ jobs:
     get-cold-danmaku:
         runs-on: ubuntu-latest
         env:
-            DatabaseConnectSetting: ${{ secrets.DATABASE_CONNECT_SETTING }}
+            DatabaseHost: ${{ secrets.DATABASE_HOST }}
+            DatabasePort: ${{ secrets.DATABASE_PORT }}
+            DatabaseTable: ${{ secrets.DATABASE_TABLE }}
+            DatabaseUsername: ${{ secrets.DATABASE_USERNAME }}
+            DatabasePassword: ${{ secrets.DATABASE_PASSWORD }}
             DandanAppId: ${{ secrets.DANDANPLAY_APP_ID }}
             DandanAppSecret: ${{ secrets.DANDANPLAY_APP_SECRET }}
             R2AccessKeyId: ${{ secrets.R2_ACCESS_KEY_ID }}
