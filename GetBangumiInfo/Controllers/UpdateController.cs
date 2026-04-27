@@ -9,10 +9,6 @@ namespace GetBangumiInfo.Controllers;
 
 public class UpdateController
 {
-    private const int MaxDataBaseBatchSize = 5;
-
-    private static int _counter;
-
     /// <summary>
     /// 获取 Bilibili 热门剧集列表（最近3天内发布的剧集编号）
     /// </summary>
@@ -90,34 +86,65 @@ public class UpdateController
         List<Episode> tempHotList,
         bool          removeNotInTemp)
     {
-        var dbHotList   = db.EpisodeList.ToList();
-        var dbHotDict   = dbHotList.ToDictionary(e => e.Id);
+        // 使用 AsNoTracking() 避免追踪查询的实体，因为我们只关心 ID 列表
+        var dbHotIds = await db.EpisodeList
+                               .AsNoTracking()
+                               .Select(e => e.Id)
+                               .ToListAsync();
+        var dbHotIdSet  = dbHotIds.ToHashSet();
         var tempHotDict = tempHotList.ToDictionary(e => e.Id);
 
         if (removeNotInTemp)
         {
             Console.WriteLine("🧹 Cleaning up hot episodes...");
             var removedHot = 0;
-            foreach (var dbItem in dbHotList.Where(dbItem => !tempHotDict.ContainsKey(dbItem.Id)))
+
+            // 找出需要删除的 ID
+            var idsToRemove = dbHotIdSet.Where(id => !tempHotDict.ContainsKey(id)).ToList();
+
+            foreach (var id in idsToRemove)
             {
-                db.EpisodeList.Remove(dbItem);
+                // 使用 Attach + Remove 方式删除，这样可以和 Add 操作在同一个 SaveChanges 事务中
+                var entityToRemove = new Episode { Id = id };
+                db.EpisodeList.Attach(entityToRemove);
+                db.EpisodeList.Remove(entityToRemove);
                 removedHot++;
-                await AddBatch(db);
             }
 
-            Console.WriteLine($"🗑 Removed {removedHot} hot episodes not in temp list.");
+            Console.WriteLine($"🗑 Marked {removedHot} hot episodes for removal.");
         }
 
         var addedHot = 0;
         Console.WriteLine("➕ Adding new hot episodes...");
-        foreach (var tempItem in tempHotList.Where(tempItem => !dbHotDict.ContainsKey(tempItem.Id)))
+
+        // 重新查询数据库中的 ID（因为可能有其他进程插入，或者刚刚删除了一些）
+        var currentDbHotIds = await db.EpisodeList
+                                      .AsNoTracking()
+                                      .Select(e => e.Id)
+                                      .ToListAsync();
+        var currentDbHotIdSet = currentDbHotIds.ToHashSet();
+
+        // 获取 ChangeTracker 中已添加的 ID（避免重复添加）
+        var trackedAddedIds = db.ChangeTracker.Entries<Episode>()
+                                .Where(e => e.State == EntityState.Added)
+                                .Select(e => e.Entity.Id)
+                                .ToHashSet();
+
+        foreach (var tempItem in tempHotList.Where(tempItem =>
+                                                       !currentDbHotIdSet.Contains(tempItem.Id) &&
+                                                       !trackedAddedIds.Contains(tempItem.Id)))
         {
             await db.EpisodeList.AddAsync(tempItem);
             addedHot++;
-            await AddBatch(db);
         }
 
-        Console.WriteLine($"✅ Added {addedHot} new hot episodes.");
+        Console.WriteLine($"✅ Marked {addedHot} new hot episodes for addition.");
+
+        // 统一保存所有变更
+        if (addedHot > 0 || (removeNotInTemp && dbHotIdSet.Count > tempHotDict.Count))
+        {
+            await SaveChangesWithRetryAsync(db);
+        }
     }
 
     /// <summary>
@@ -128,46 +155,64 @@ public class UpdateController
         List<EpisodeCold> tempColdList,
         bool              removeNotInTemp)
     {
-        var dbColdList   = db.EpisodeListCold.ToList();
-        var dbColdDict   = dbColdList.ToDictionary(e => e.Id);
+        // 使用 AsNoTracking() 避免追踪查询的实体，因为我们只关心 ID 列表
+        var dbColdIds = await db.EpisodeListCold
+                                .AsNoTracking()
+                                .Select(e => e.Id)
+                                .ToListAsync();
+        var dbColdIdSet  = dbColdIds.ToHashSet();
         var tempColdDict = tempColdList.ToDictionary(e => e.Id);
 
         if (removeNotInTemp)
         {
             Console.WriteLine("🧹 Cleaning up cold episodes...");
             var removedCold = 0;
-            foreach (var dbItem in dbColdList.Where(dbItem => !tempColdDict.ContainsKey(dbItem.Id)))
+
+            // 找出需要删除的 ID
+            var idsToRemove = dbColdIdSet.Where(id => !tempColdDict.ContainsKey(id)).ToList();
+
+            foreach (var id in idsToRemove)
             {
-                db.EpisodeListCold.Remove(dbItem);
+                // 使用 Attach + Remove 方式删除，这样可以和 Add 操作在同一个 SaveChanges 事务中
+                var entityToRemove = new EpisodeCold { Id = id };
+                db.EpisodeListCold.Attach(entityToRemove);
+                db.EpisodeListCold.Remove(entityToRemove);
                 removedCold++;
-                await AddBatch(db);
             }
 
-            Console.WriteLine($"🗑 Removed {removedCold} cold episodes not in temp list.");
+            Console.WriteLine($"🗑 Marked {removedCold} cold episodes for removal.");
         }
 
         var addedCold = 0;
         Console.WriteLine("➕ Adding new cold episodes...");
-        foreach (var tempItem in tempColdList.Where(tempItem => !dbColdDict.ContainsKey(tempItem.Id)))
+
+        // 重新查询数据库中的 ID（因为可能有其他进程插入，或者刚刚删除了一些）
+        var currentDbColdIds = await db.EpisodeListCold
+                                       .AsNoTracking()
+                                       .Select(e => e.Id)
+                                       .ToListAsync();
+        var currentDbColdIdSet = currentDbColdIds.ToHashSet();
+
+        // 获取 ChangeTracker 中已添加的 ID（避免重复添加）
+        var trackedAddedColdIds = db.ChangeTracker.Entries<EpisodeCold>()
+                                    .Where(e => e.State == EntityState.Added)
+                                    .Select(e => e.Entity.Id)
+                                    .ToHashSet();
+
+        foreach (var tempItem in tempColdList.Where(tempItem =>
+                                                        !currentDbColdIdSet.Contains(tempItem.Id) &&
+                                                        !trackedAddedColdIds.Contains(tempItem.Id)))
         {
             await db.EpisodeListCold.AddAsync(tempItem);
             addedCold++;
-            await AddBatch(db);
         }
 
-        Console.WriteLine($"✅ Added {addedCold} new cold episodes.");
-    }
+        Console.WriteLine($"✅ Marked {addedCold} new cold episodes for addition.");
 
-    /// <summary>
-    /// 保存剩余批次数据并重置计数器
-    /// </summary>
-    private static async Task FlushBatchAsync(MyDbContext db)
-    {
-        if (_counter > 0)
+        // 统一保存所有变更
+        if (addedCold > 0 || (removeNotInTemp && dbColdIdSet.Count > tempColdDict.Count))
         {
-            Console.WriteLine("💾 Saving remaining batched changes...");
             await SaveChangesWithRetryAsync(db);
-            _counter = 0;
         }
     }
 
@@ -186,8 +231,6 @@ public class UpdateController
         Console.WriteLine("📊 Loading mapping list from DB...");
         var mappingList = db.MappingList.ToList();
         Console.WriteLine($"📊 Loaded {mappingList.Count} mapping entries.");
-
-        _counter = 0;
 
         foreach (var (bangumiId, name) in bangumiList
                     .Select(e => (e.Id!.Value, string.IsNullOrEmpty(e.NameCn) ? e.Name : e.NameCn)))
@@ -231,7 +274,10 @@ public class UpdateController
         Console.WriteLine("\n🧊 Loading existing hot/cold lists from DB...");
         await SyncHotListAsync(db, tempHotList, removeNotInTemp : true);
         await SyncColdListAsync(db, tempColdList, removeNotInTemp : true);
-        await FlushBatchAsync(db);
+
+        // 清理 ChangeTracker，防止长时间运行导致内存膨胀和脏数据
+        db.ChangeTracker.Clear();
+        Console.WriteLine("🧹 ChangeTracker cleared.");
 
         Console.WriteLine("🎉 UpdateBangumi completed successfully!");
     }
@@ -267,8 +313,6 @@ public class UpdateController
                       })
                      .ToList();
         Console.WriteLine($"📊 Loaded {mappingList.Count} mapping entries.");
-
-        _counter = 0;
 
         foreach (var (bangumiId, name) in bangumiList
                     .Select(e => (mappingList.First(m => m.DandanId == e.Id).BangumiId, e.Title)))
@@ -313,7 +357,10 @@ public class UpdateController
         Console.WriteLine("\n🧊 Loading existing hot/cold lists from DB...");
         await SyncHotListAsync(db, tempHotList, removeNotInTemp : false);
         await SyncColdListAsync(db, tempColdList, removeNotInTemp : false);
-        await FlushBatchAsync(db);
+
+        // 清理 ChangeTracker，防止长时间运行导致内存膨胀和脏数据
+        db.ChangeTracker.Clear();
+        Console.WriteLine("🧹 ChangeTracker cleared.");
 
         Console.WriteLine("🎉 UpdateDandan completed successfully!");
     }
@@ -356,12 +403,9 @@ public class UpdateController
             {
                 nowItem.DandanId = shortInfo.Id;
             }
-
-            await AddBatch(db);
         }
 
         await SaveChangesWithRetryAsync(db);
-        _counter = 0;
 
         // 🌟 3. 解析 BilibiliId
         foreach (var item in allMappings.Where(e => e.BilibiliId == -1))
@@ -369,11 +413,9 @@ public class UpdateController
             var bilibiliId = await Bangumi2BilibiliUtils.Parser(item.BangumiId);
             if (bilibiliId == -1) continue;
             item.BilibiliId = bilibiliId;
-            await AddBatch(db);
         }
 
         await SaveChangesWithRetryAsync(db);
-        _counter = 0;
 
         // 🌟 4. 填补 AirDate 和 IsJapaneseAnime
         foreach (var item in allMappings.Where(e => e.AirDate == null || e.IsJapaneseAnime == null))
@@ -381,22 +423,10 @@ public class UpdateController
             var info = await BangumiUtils.GetSubjectInfo(item.BangumiId);
             item.AirDate         = info?.Date!;
             item.IsJapaneseAnime = info?.MetaTagList?.Contains("日本");
-            await AddBatch(db);
         }
 
         // ✅ 最后统一保存
         await SaveChangesWithRetryAsync(db);
-    }
-
-    private static async Task AddBatch(DbContext db)
-    {
-        _counter++;
-        if (_counter == MaxDataBaseBatchSize)
-        {
-            Console.WriteLine("Batch is max, save.");
-            await SaveChangesWithRetryAsync(db);
-            _counter = 0;
-        }
     }
 
     private static async Task SaveChangesWithRetryAsync(DbContext db, int maxRetries = 3, int delayMs = 1000)
@@ -408,39 +438,34 @@ public class UpdateController
                 await db.SaveChangesAsync();
                 return;
             }
+            catch (DbUpdateConcurrencyException concurrencyEx)
+            {
+                // 并发冲突：实体在数据库中已被删除或修改
+                Console.WriteLine($"⚠️ [Attempt {attempt}] Concurrency conflict. Detaching failed entries...");
+
+                foreach (var entry in concurrencyEx.Entries)
+                {
+                    entry.State = EntityState.Detached;
+                }
+
+                // 并发冲突分离后可以立即重试，让 EF Core 重新评估剩余实体
+                if (attempt == maxRetries)
+                {
+                    Console.WriteLine("Reached max retries. Rethrowing.");
+                    throw;
+                }
+            }
+            catch (DbUpdateException dbEx) when (IsDuplicateKeyException(dbEx))
+            {
+                // 主键/唯一约束冲突 (23505)：数据已存在，直接清空 Tracker 跳过
+                Console.WriteLine($"⚠️ [Attempt {attempt}] Duplicate key (23505). Clearing entire batch tracker to be safe.");
+
+                db.ChangeTracker.Clear();
+                return;
+            }
             catch (Exception ex) when (IsTransient(ex))
             {
                 Console.WriteLine($"[Attempt {attempt}] SaveChangesAsync failed: {ex.Message}");
-
-                // 详细输出并发冲突信息
-                if (ex is DbUpdateConcurrencyException concurrencyEx)
-                {
-                    Console.WriteLine("⚠️ Detected optimistic concurrency conflict:");
-                    foreach (var entry in concurrencyEx.Entries)
-                    {
-                        Console.WriteLine($"  - Entity: {entry.Entity.GetType().Name}");
-                        Console.WriteLine($"    State: {entry.State}");
-                        Console.WriteLine($"    Key: {string.Join(", ", entry.Properties.Where(p => p.Metadata.IsPrimaryKey()).Select(p => $"{p.Metadata.Name}={p.CurrentValue}"))}");
-
-                        // 输出被修改的属性
-                        if (entry.State == EntityState.Modified)
-                        {
-                            var modifiedProps = entry.Properties.Where(p => p.IsModified).Select(p => p.Metadata.Name);
-                            Console.WriteLine($"    Modified properties: {string.Join(", ", modifiedProps)}");
-                        }
-
-                        // 尝试获取数据库当前值
-                        try
-                        {
-                            await entry.ReloadAsync();
-                            Console.WriteLine("    Entity reloaded from database successfully.");
-                        }
-                        catch (Exception reloadEx)
-                        {
-                            Console.WriteLine($"    Failed to reload entity: {reloadEx.Message}");
-                        }
-                    }
-                }
 
                 if (attempt == maxRetries)
                 {
@@ -471,5 +496,13 @@ public class UpdateController
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// 检查是否为主键/唯一约束冲突异常 (PostgreSQL 23505)
+    /// </summary>
+    private static bool IsDuplicateKeyException(Exception ex)
+    {
+        return ex is DbUpdateException { InnerException: Npgsql.PostgresException { SqlState: "23505" } };
     }
 }
