@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="DanmakuUpdate/DanmakuUpdate.csproj" />
+  <Project Path="GetBangumiInfo/GetBangumiInfo.csproj" />
+  <Project Path="Test/Test.csproj" />
+</Solution>
