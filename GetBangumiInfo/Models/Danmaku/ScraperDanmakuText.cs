@@ -55,14 +55,20 @@ public class ScraperDanmakuText : IXmlSerializable
         writer.WriteString(IsValidXmlString(Content) ? Content : RemoveInvalidXmlChars(Content));
     }
 
-    private static string RemoveInvalidXmlChars(string text)
+    private static string RemoveInvalidXmlChars(string? text)
     {
+        if (string.IsNullOrEmpty(text))
+            return string.Empty;
+
         var validXmlChars = text.Where(XmlConvert.IsXmlChar).ToArray();
         return new string(validXmlChars);
     }
 
-    private static bool IsValidXmlString(string text)
+    private static bool IsValidXmlString(string? text)
     {
+        if (string.IsNullOrEmpty(text))
+            return true;
+
         try
         {
             XmlConvert.VerifyXmlChars(text);
