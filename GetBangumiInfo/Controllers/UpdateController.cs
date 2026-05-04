@@ -300,18 +300,20 @@ public class UpdateController
                        .Distinct()
                        .ToList();
         // 去除已有的id
-        bangumiList = bangumiList
-                     .Where(e =>
-                      {
-                          var mapping = mappingList.FirstOrDefault(m => m.DandanId == e.Id);
-                          if (mapping == null)
-                          {
-                              Console.WriteLine($"Mapping not contains, id:{e.Id}");
-                          }
+        bangumiList =
+        [
+            .. bangumiList
+               .Where(e =>
+                {
+                    var mapping = mappingList.FirstOrDefault(m => m.DandanId == e.Id);
+                    if (mapping == null)
+                    {
+                        Console.WriteLine($"Mapping not contains, id:{e.Id}");
+                    }
 
-                          return mapping != null && !idList.Contains(mapping.BangumiId);
-                      })
-                     .ToList();
+                    return mapping != null && !idList.Contains(mapping.BangumiId);
+                })
+        ];
         Console.WriteLine($"📊 Loaded {mappingList.Count} mapping entries.");
 
         foreach (var (bangumiId, name) in bangumiList
