@@ -25,9 +25,9 @@ public class ScraperDanmakuText : IXmlSerializable
     /// </summary>
     public uint Color { get; set; } = 16777215;
 
-    public string MidHash  { get; set; } //发送者UID的HASH
-    public string Content  { get; set; } //弹幕内容
-    public long   SendTime { get; set; } //发送时间
+    public string? MidHash  { get; set; } //发送者UID的HASH
+    public string? Content  { get; set; } //弹幕内容
+    public long    SendTime { get; set; } //发送时间
 
     public int Weight { get; set; } = 1; //权重
 

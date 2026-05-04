@@ -36,8 +36,8 @@ public class Bangumi2BilibiliUtils
 
                                          return null;
                                      })
-                                    .Where(m => m != null)!
-                                    .OrderBy(m => m.BangumiId)
+                                    .Where(m => m != null)
+                                    .OrderBy(m => m!.BangumiId)
                                     .ToList();
         var jsonStr = JsonConvert.SerializeObject(mappingList, Formatting.Indented);
         await File.WriteAllTextAsync(CachePath, jsonStr);

@@ -327,7 +327,7 @@ public class UpdateController
                 continue;
             }
 
-            if (!mapping.IsJapaneseAnime!.Value)
+            if (!(mapping.IsJapaneseAnime ?? false))
             {
                 Console.WriteLine("🔕 Not Japanese anime, skipping.");
                 continue;
